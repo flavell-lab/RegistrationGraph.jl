@@ -157,3 +157,89 @@ function remove_frame!(graph::SimpleWeightedGraph, frame::Integer)
     end
 end
 
+
+
+#TODO: fix everything below this line
+
+"""
+Updates a difficulty graph based on registration quality data.
+threshold = value at which quality is deemed sufficiently unacceptable that the graph has infinite weight
+(threshold - 1) / 2 = value at which quality is average and graph weight not updated
+"""
+function update_graph(reg_quality_arr, difficulty, img_to_idx; threshold=-0.8)
+    difficulty_new = copy(difficulty)
+    for reg_quality in reg_quality_arr
+        open(reg_quality, "r") do f
+            first = true
+            idx = 0
+            for line in eachline(f)
+                data = split(line)
+                if first
+                    idx = findfirst(data.=="NCC")
+                    first = false
+                    continue
+                end
+                try
+                    moving,fixed = map(x->img_to_idx[parse(Int16, x)], split(data[1], "to"))
+                    ncc = min(parse(Float64, data[idx]), threshold)
+                    new_difficulty = new_difficulty[moving,fixed] * (1 + ncc) / (threshold - ncc + 1e-6)
+                    difficulty_new[moving,fixed] = new_difficulty
+                    difficulty_new[fixed,moving] = new_difficulty
+                catch e
+                    println("WARNING: "*data[1]*" appears to be removed from the graph.");
+                end
+            end
+        end
+    end
+    return difficulty_new
+end
+
+function make_final_graph(reg_quality_arr, difficulty, img_to_idx; threshold=-0.8)
+    l = length(keys(img_to_idx))
+    difficulty_new = fill(Inf, (l, l))
+    for reg_quality in reg_quality_arr
+        open(reg_quality, "r") do f
+            first = true
+            idx = 0
+            for line in eachline(f)
+                data = split(line)
+                if first
+                    idx = findfirst(data.=="NCC")
+                    first = false
+                    continue
+                end
+                try
+                    moving,fixed = map(x->img_to_idx[parse(Int16, x)], split(data[1], "to"))
+                    ncc = min(parse(Float64, data[idx]), threshold)
+                    d = min(difficulty[moving,fixed] * (1 + ncc) / (threshold - ncc + 1e-6), difficulty_new[moving,fixed])
+                    difficulty_new[moving,fixed] = d
+                    difficulty_new[fixed,moving] = d
+                catch e
+                    println("WARNING: "*data[1]*" appears to be removed from the graph.");
+                end
+            end
+        end
+    end
+    return difficulty_new
+end
+
+function update_registration_problems(edges, edges_new)
+    repeated_edges = []
+    new_edges = []
+    for edge in edges_new
+        if edge in edges
+            push!(repeated_edges, edge)
+        else
+            push!(new_edges, edge)
+        end
+    end
+    return (repeated_edges, new_edges)
+end
+
+function convert_graph(eds, min_vertex, img_to_idx)
+    g = SimpleGraph(length(img_to_idx))
+    for edge in eds
+        add_edge!(g, img_to_idx[edge[1]], img_to_idx[edge[2]])
+    end
+    return g
+end

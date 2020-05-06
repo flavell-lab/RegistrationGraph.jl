@@ -4,6 +4,13 @@ A collection of tools for running elastix registration. Suppose there is a set o
 
 ## Frame Similarity Heuristics
 
+### Worm Curvature Similarity Heuristic
+This heuristic posits that two frames are similar to each other if the worm's curvature is similar, as this would result in a smaller amount of bending. It is implemented by the `generate_elastix_difficulty_wormcurve` method.
+
+
+
+
+
 ## Data Filters and Background Removal
 
 
@@ -23,7 +30,7 @@ Suppose that data was saved in a file `elastix_difficulty.txt`. Then you can per
 ```
 # loads the file into a graph
 # you may want to modify the difficulty_importance parameter
-# see documentation for load_graph
+# see documentation for load_graph for more details
 graph = load_graph("/path/to/elastix_difficulty.txt")
 
 # after generating the difficulty file, you decided that frame 3 has bad data
@@ -50,4 +57,4 @@ Another prerequisite of this code is that you have set up ssh keys to OpenMind.
 
 
 ## Checking Elastix Quality and Regenerating the Graph
-After running elastix on a set of registration problems, it is likely that most, but not all, of them will succeed. 
+After running elastix on a set of registration problems, it is likely that many, but not all, of them will succeed. 
