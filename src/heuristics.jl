@@ -98,7 +98,7 @@ and that the head position of the worm is known in each frame.
 - `frames`: which frames should be included in the difficulty calculation.
     (This can, for instance, be used to exclude frames where the worm is not in the field of view.)
 - `difficulty_file::String`: path to file to save elastix difficulty.
-- `figure_save_path`: Path to save figures of worm curvature. If left at its default value `nothing`, figures will not be generated.
+- `figure_save_path::String`: Path to save figures of worm curvature. If left blank, figures will not be generated.
 ## Heuristic parameters (optional):
 - `downscale::Integer`: log2(factor) by which to downscale the image before processing. Default 3 (ie: downscale by a factor of 8)
 - `num_points::Integer`: number of points (not including head) in generated curve. Default 9.
@@ -107,16 +107,15 @@ and that the head position of the worm is known in each frame.
 """
 function generate_elastix_difficulty_wormcurve(rootpath::String, mhd_path::String, head_path::String,
         img_prefix::String, channel::Integer, frames, difficulty_file::String,
-        figure_save_path=nothing; downscale::Integer=3, num_points::Integer=9, headpt::Integer=4, tailpt::Integer=7)
+        figure_save_path::String=""; downscale::Integer=3, num_points::Integer=9, headpt::Integer=4, tailpt::Integer=7)
     len = length(frames)
     difficulty = zeros(len, len)
-    println("Loading images...")
     imgs = []
-    @showprogress for i in frames
+    for idx in 1:len
+        i = frames[idx]
         path_i = joinpath(rootpath, mhd_path, img_prefix*"_t"*string(i, pad=4)*"_ch$(channel).mhd")
         push!(imgs, Float64.(maxprj(read_img(MHD(path_i)), dims=3)))
     end
-    println("Getting worm curves")
     curves = []
     head_pos = read_head_pos(joinpath(rootpath, head_path))
     @showprogress for i in 1:len
@@ -125,17 +124,15 @@ function generate_elastix_difficulty_wormcurve(rootpath::String, mhd_path::Strin
         x_c, y_c = find_curve(imgs[i], downscale, head_pos[frames[i]]./2^downscale, num_points)
         if figure_save_path != nothing
             create_dir(joinpath(rootpath, figure_save_path))
-            f = figure();
-            imshow(transpose(imgs[i]), cmap="gray");
-            axis("off"); scatter(x_c.-1, y_c.-1,color="red",s=10); scatter(x_c[1].-1, y_c[1].-1, color="blue");
-            savefig(joinpath(rootpath, figure_save_path, "$(frames[i]).png"));
-            close(f)
+            fig = heatmap(transpose(imgs[i]), fillcolor=:grayscale, aspect_ratio=1, flip=false, showaxis=false, legend=false)
+            scatter!(fig, x_c.-1, y_c.-1, color="red");
+            scatter!(fig, [x_c[1].-1], [y_c[1].-1], color="cyan", markersize=5);
+            savefig(fig, joinpath(rootpath, figure_save_path, "$(frames[i]).png"));
         end
         push!(curves, (x_c, y_c))
     end
-        
-    println("Computing elastix difficulty...")
-    @showprogress for i in 1:len
+    
+    for i in 1:len
         for j in 1:len
             # skip duplicate calculations
             if j <= i
@@ -145,9 +142,55 @@ function generate_elastix_difficulty_wormcurve(rootpath::String, mhd_path::Strin
         end
     end
 
-    println("Writing output...")
     open(joinpath(rootpath, difficulty_file), "w") do f
-        write(f, string(frames)*"\n")
+        write(f, string(collect(frames))*"\n")
         write(f, replace(string(difficulty), ";"=>"\n"))
     end
+    return difficulty
+end
+
+"""
+Generates an elastix difficulty file based on the location of the HSN neuron and the nerve ring.
+# Arguments:
+- `rootpath::String`: working directory path; all other directory inputs are relative to this
+- `nr_location_file::String`: path to file containing nerve ring locations
+- `hsn_location_file::String`: path to file containing HSN locations
+- `frames`: array of frames to include in difficulty calculation
+- `difficulty_file::String`: path to output file for elastix difficulty
+# Heuristic parameters (optional):
+- `nr_weight::Real`: weight of nerve ring location relative to HSN location. Default 1.
+"""
+function generate_elastix_difficulty_HSN_NR(rootpath::String, nr_location_file::String, hsn_location_file::String, 
+        frames, difficulty_file::String; nr_weight::Real=1)
+    hsn_locs = Dict()
+    open(joinpath(rootpath, hsn_location_file)) do hsn
+        for line in eachline(hsn)
+            s = [parse(Int32, x) for x in split(line)]
+            hsn_locs[s[1]] = s[2:4]
+        end
+    end
+    nr_locs = Dict()
+    open(joinpath(rootpath, nr_location_file)) do nr
+        for line in eachline(nr)
+            s = [parse(Int32, x) for x in split(line)]
+            nr_locs[s[1]] = s[2:4]
+        end
+    end
+    n = length(frames)
+    difficulty = zeros(n,n)
+    for i in 1:n
+        for j in 1:n
+            # skip duplicate calculations
+            if j <= i
+                continue
+            end
+            difficulty[i, j] = sqrt(sum((hsn_locs[frames[i]] .- hsn_locs[frames[j]]).^2))
+                     + nr_weight * sqrt(sum((nr_locs[frames[i]] .- nr_locs[frames[j]]).^2))
+        end
+    end
+    open(joinpath(rootpath, difficulty_file), "w") do f
+        write(f, string(collect(frames))*"\n")
+        write(f, replace(string(difficulty), ";"=>"\n"))
+    end
+    return difficulty
 end
