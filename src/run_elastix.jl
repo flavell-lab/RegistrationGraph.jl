@@ -153,5 +153,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
     run(Cmd(["ssh", "-f", "$(user)@$(server)", "[ ! -d $(reg) ] && mkdir $(reg)"]))
     run(Cmd(["rsync", "-rlDvzu", "--delete", joinpath(data_dir_local, cmd_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, cmd_dir)]))
     run(Cmd(["rsync", "-rlDvzu", "--delete", joinpath(data_dir_local, MHD_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, MHD_dir)]))
-    run(Cmd(["rsync", "-rlDvzu", "--delete", joinpath(data_dir_local, mask_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, mask_dir)]))
+    if mask_dir != ""
+        run(Cmd(["rsync", "-rlDvzu", "--delete", joinpath(data_dir_local, mask_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, mask_dir)]))
+    end
 end

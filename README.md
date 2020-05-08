@@ -79,6 +79,6 @@ write_sbatch_graph(problems, "/path/to/data", "/path/to/data/on/openmind", "img_
 ```
 
 ## Checking elastix quality and regenerating the graph
-After running elastix on a set of registration problems, it is likely that many, but not all, of them will succeed. 
+After running elastix on a set of registration problems, it is likely that many, but not all, of them will succeed. By running a quality metric, such as those implemented in the `RegistrationQualityMetrics.jl` package, the algorithm's perceived difficulty of registration pairs can be modified based on how well elastix performed in each instance. This allows the graph to be regenerated to get around the failed registrations, so that elastix can be run again. By iterating this process, it is possible to get all but a very small number of frames to be registered correctly.
 
 ### Manually assessing registration quality
