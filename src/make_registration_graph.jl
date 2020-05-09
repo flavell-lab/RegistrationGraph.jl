@@ -138,9 +138,9 @@ end
 """
 Outputs `graph::SimpleWeightedDiGraph` to an output file `outfile` containing a list of edges in `graph`.
 """
-function output_graph(graph::SimpleWeightedDiGraph, outfile::String)
+function output_graph(subgraph::SimpleWeightedDiGraph, outfile::String)
     open(outfile, "w") do f
-        for edge in edges(graph)
+        for edge in edges(subgraph)
             write(f, string(Int16(src(edge)))*" "*string(Int16(dst(edge)))*"\n")
         end
     end
@@ -158,16 +158,17 @@ function remove_frame!(graph::SimpleWeightedGraph, frame::Integer)
 end
 
 
-
-#TODO: fix everything below this line
-
 """
-Updates a difficulty graph based on registration quality data.
-threshold = value at which quality is deemed sufficiently unacceptable that the graph has infinite weight
-(threshold - 1) / 2 = value at which quality is average and graph weight not updated
+Recomputes the difficulty graph based on registration quality data.
+Returns a new graph where difficulties of registration problems are scaled by the quality metric.
+# Arguments
+- `reg_quality_arr::Array{String,1}` is an array of filenames containing registration quality data.
+- `graph::SimpleWeightedGraph` is the difficulty graph to be updated
+- `metric::String` is which quality metric to use to update the graph
 """
-function update_graph(reg_quality_arr, difficulty, img_to_idx; threshold=-0.8)
-    difficulty_new = copy(difficulty)
+function update_graph(reg_quality_arr::Array{String,1}, graph::SimpleWeightedGraph, metric::String)
+    new_graph = copy(graph)
+    d = to_dict(graph)
     for reg_quality in reg_quality_arr
         open(reg_quality, "r") do f
             first = true
@@ -175,25 +176,34 @@ function update_graph(reg_quality_arr, difficulty, img_to_idx; threshold=-0.8)
             for line in eachline(f)
                 data = split(line)
                 if first
-                    idx = findfirst(data.=="NCC")
+                    idx = findfirst(data.==metric)
                     first = false
                     continue
                 end
-                try
-                    moving,fixed = map(x->img_to_idx[parse(Int16, x)], split(data[1], "to"))
-                    ncc = min(parse(Float64, data[idx]), threshold)
-                    new_difficulty = new_difficulty[moving,fixed] * (1 + ncc) / (threshold - ncc + 1e-6)
-                    difficulty_new[moving,fixed] = new_difficulty
-                    difficulty_new[fixed,moving] = new_difficulty
-                catch e
-                    println("WARNING: "*data[1]*" appears to be removed from the graph.");
-                end
+                moving,fixed = map(x->parse(Int32, x), split(data[1], "to"))
+                metric_val = parse(Float64, data[idx])
+                new_difficulty = d[moving][fixed] * metric_val
+                add_edge!(new_graph, moving, fixed, new_difficulty)
             end
         end
     end
-    return difficulty_new
+    return new graph
 end
 
+"""
+Loads a set of registration problems from a file `edge_file` into an array
+"""
+function load_registration_problems(edge_file)
+    reg_problems = []
+    open(edge_file) do f
+        for line in eachline(f)
+            push!(reg_problems, Tuple(map(x->parse(Int64, x), split(line))))
+        end
+    end
+    return reg_problems
+end
+
+# TODO: fix this function
 function make_final_graph(reg_quality_arr, difficulty, img_to_idx; threshold=-0.8)
     l = length(keys(img_to_idx))
     difficulty_new = fill(Inf, (l, l))
@@ -223,23 +233,19 @@ function make_final_graph(reg_quality_arr, difficulty, img_to_idx; threshold=-0.
     return difficulty_new
 end
 
-function update_registration_problems(edges, edges_new)
-    repeated_edges = []
-    new_edges = []
-    for edge in edges_new
-        if edge in edges
-            push!(repeated_edges, edge)
-        else
-            push!(new_edges, edge)
+"""
+Removes previous registrations from the subgraph. 
+"""
+function remove_previous_registrations(subgraph::SimpleWeightedDiGraph, previous_problems::Array{String,1})
+    previous_problems = []
+    for previous_reg in previous_problems
+        append!(previous_problems, load_registration_problems(previous_reg))
+    end
+    subgraph_purged = SimpleWeightedDiGraph(nv(subgraph))
+    for edge in edges(subgraph)
+        if !((src(edge), dst(edge)) in previous_problems)
+            add_edge!(subgraph_purged, src(edge), dst(edge), weight(edge))
         end
     end
-    return (repeated_edges, new_edges)
-end
-
-function convert_graph(eds, min_vertex, img_to_idx)
-    g = SimpleGraph(length(img_to_idx))
-    for edge in eds
-        add_edge!(g, img_to_idx[edge[1]], img_to_idx[edge[2]])
-    end
-    return g
+    return subgraph_purged
 end
