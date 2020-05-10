@@ -18,6 +18,5 @@ export
     optimize_subgraph,
     output_graph,
     update_graph,
-    update_registration_problems,
-    make_final_graph
+    remove_previous_registrations
 end # module
