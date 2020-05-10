@@ -48,7 +48,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         duration::Time=Dates.Time(8,0,0))
 
     # make sure cmd_dir ends with /, otherwise rsync will not work
-    if cmd_dir[end] != '/'
+    if cmd_dir[end] != "/"
         cmd_dir*="/"
     end
     script_dir=joinpath(data_dir_local, cmd_dir)
@@ -114,7 +114,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         # mask parameters
         if mask_dir != ""
             script_str *= " -fMask "*joinpath(data_dir_remote, mask_dir, "$(img_prefix)_t$(fixed_final)_ch$(channel).mhd")*
-            " -mMask "*joinpath(data_dir_remote, mask_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")*
+            " -mMask "*joinpath(data_dir_remote, mask_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")
         end
         # initial condition parameters
         if use_euler
