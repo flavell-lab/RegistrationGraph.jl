@@ -162,15 +162,16 @@ end
 Recomputes the difficulty graph based on registration quality data.
 Returns a new graph where difficulties of registration problems are scaled by the quality metric.
 # Arguments
+- `rootpath::String`: working directory of registration quality data
 - `reg_quality_arr::Array{String,1}` is an array of filenames containing registration quality data.
 - `graph::SimpleWeightedGraph` is the difficulty graph to be updated
 - `metric::String` is which quality metric to use to update the graph
 """
-function update_graph(reg_quality_arr::Array{String,1}, graph::SimpleWeightedGraph, metric::String)
+function update_graph(rootpath::String, reg_quality_arr::Array{String,1}, graph::SimpleWeightedGraph, metric::String)
     new_graph = copy(graph)
     d = to_dict(graph)
     for reg_quality in reg_quality_arr
-        open(reg_quality, "r") do f
+        open(joinpath(rootpath, reg_quality), "r") do f
             first = true
             idx = 0
             for line in eachline(f)
@@ -187,16 +188,19 @@ function update_graph(reg_quality_arr::Array{String,1}, graph::SimpleWeightedGra
             end
         end
     end
-    return new graph
+    return new_graph
 end
 
 """
-Loads a set of registration problems from a set of files `edge_file::Array{String, 1}` into an array
+Loads a set of registration problems into an array.
+# Arguments:
+- `rootpath::String`: working directory of registration quality data
+- `edge_files::Array{String, 1}`: files containing registration problems
 """
-function load_registration_problems(edge_files::Array{String,1})
+function load_registration_problems(rootpath::String, edge_files::Array{String,1})
     reg_problems = []
     for edge_file in edge_files
-        open(edge_file) do f
+        open(joinpath(rootpath, edge_file)) do f
             for line in eachline(f)
                 push!(reg_problems, Tuple(map(x->parse(Int64, x), split(line))))
             end
@@ -206,16 +210,17 @@ function load_registration_problems(edge_files::Array{String,1})
 end
 
 """
-Removes previous registrations from the subgraph. 
+Removes previous registrations from the subgraph.
+# Arguments:
+- `rootpath::String`: working directory of registration quality data
+- `previous_problems::Array{String, 1}`: files containing registration problems
+- `subgraph::SimpleWeightedDiGraph`: current subgraph
 """
-function remove_previous_registrations(subgraph::SimpleWeightedDiGraph, previous_problems::Array{String,1})
-    previous_problems = []
-    for previous_reg in previous_problems
-        append!(previous_problems, load_registration_problems(previous_reg))
-    end
+function remove_previous_registrations(rootpath::String, previous_problems::Array{String,1}, subgraph::SimpleWeightedDiGraph)
+    previous = load_registration_problems(rootpath, previous_problems)
     subgraph_purged = SimpleWeightedDiGraph(nv(subgraph))
     for edge in edges(subgraph)
-        if !((src(edge), dst(edge)) in previous_problems)
+        if !((src(edge), dst(edge)) in previous)
             add_edge!(subgraph_purged, src(edge), dst(edge), weight(edge))
         end
     end
