@@ -1,17 +1,4 @@
 """
-Loads a set of registration problems from a file `edge_file`
-"""
-function load_registration_problems(edge_file)
-    reg_problems = []
-    open(edge_file) do f
-        for line in eachline(f)
-            push!(reg_problems, Tuple(map(x->parse(Int64, x), split(line))))
-        end
-    end
-    return reg_problems
-end
-
-"""
 Syncs data from local computer to a remote server and creates command files for elastix on that server.
 WARNING: This program can permanently delete data if run with incorrect arguments.
 # Arguments

@@ -63,7 +63,7 @@ This is implemented by the `write_sbatch_graph` function, which syncs all the da
 
 ```julia
 # loads registration problems you previously computed from the graph
-problems = load_registration_problems("/path/to/data/registration_problems_1.txt")
+problems = load_registration_problems(["/path/to/data/registration_problems_1.txt"])
 
 # syncs data to server and generates sbatch files for elastix
 write_sbatch_graph(problems, "/path/to/data", "/path/to/data/on/openmind", "img_prefix", 
@@ -113,5 +113,6 @@ subgraph_new_purged = remove_previous_registrations(subgraph_new, ["registration
 output_graph(subgraph_new_purged, "/path/to/data/registration_problems_$(iter).txt")
 ```
 
-## Creating the final graph
-TODO
+## Extracting Data
+
+See the package `ExtractRegisteredData.jl`

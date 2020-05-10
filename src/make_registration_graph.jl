@@ -191,46 +191,18 @@ function update_graph(reg_quality_arr::Array{String,1}, graph::SimpleWeightedGra
 end
 
 """
-Loads a set of registration problems from a file `edge_file` into an array
+Loads a set of registration problems from a set of files `edge_file::Array{String, 1}` into an array
 """
-function load_registration_problems(edge_file)
+function load_registration_problems(edge_files::Array{String,1})
     reg_problems = []
-    open(edge_file) do f
-        for line in eachline(f)
-            push!(reg_problems, Tuple(map(x->parse(Int64, x), split(line))))
-        end
-    end
-    return reg_problems
-end
-
-# TODO: fix this function
-function make_final_graph(reg_quality_arr, difficulty, img_to_idx; threshold=-0.8)
-    l = length(keys(img_to_idx))
-    difficulty_new = fill(Inf, (l, l))
-    for reg_quality in reg_quality_arr
-        open(reg_quality, "r") do f
-            first = true
-            idx = 0
+    for edge_file in edge_files
+        open(edge_file) do f
             for line in eachline(f)
-                data = split(line)
-                if first
-                    idx = findfirst(data.=="NCC")
-                    first = false
-                    continue
-                end
-                try
-                    moving,fixed = map(x->img_to_idx[parse(Int16, x)], split(data[1], "to"))
-                    ncc = min(parse(Float64, data[idx]), threshold)
-                    d = min(difficulty[moving,fixed] * (1 + ncc) / (threshold - ncc + 1e-6), difficulty_new[moving,fixed])
-                    difficulty_new[moving,fixed] = d
-                    difficulty_new[fixed,moving] = d
-                catch e
-                    println("WARNING: "*data[1]*" appears to be removed from the graph.");
-                end
+                push!(reg_problems, Tuple(map(x->parse(Int64, x), split(line))))
             end
         end
     end
-    return difficulty_new
+    return reg_problems
 end
 
 """
