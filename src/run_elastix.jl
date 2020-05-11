@@ -1,4 +1,14 @@
 """
+Creates a directory if it doesn't exist yet.
+"""
+function create_dir(dirpath::String)
+    if !isdir(dirpath)
+        mkdir(dirpath)
+    end
+end
+
+
+"""
 Syncs data from local computer to a remote server and creates command files for elastix on that server.
 WARNING: This program can permanently delete data if run with incorrect arguments.
 # Arguments

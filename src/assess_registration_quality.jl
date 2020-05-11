@@ -36,7 +36,11 @@ function make_quality_dict(rootpath::String, problem_path::String, outfile::Stri
                 for resolution in resolutions
                     for metric in func_names
                         func = evaluation_functions[metric]
-                        result = func(rootpath, moving, fixed, resolution)
+                        if mask_dir == ""
+                            result = func(rootpath, moving, fixed, resolution)
+                        else
+                            result = func(rootpath, moving, fixed, resolution, mask_dir)
+                        end
                         dict[(moving,fixed)][resolution][metric] = result
                         if metric == selection_metric && result < best_result
                             best_result = result
