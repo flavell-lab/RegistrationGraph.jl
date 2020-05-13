@@ -35,16 +35,20 @@ graph = load_graph("/path/to/data/elastix_difficulty.txt")
 
 # after generating the difficulty file, you decided that frame 3 has bad data
 # so you want to prevent it from being part of the registration problems
-remove_frame!(graph, 3)
+graph = remove_frame(graph, 3)
 
 # generates set of registration problems from the graph
 min_ind, subgraph, maximum_problem_chain = optimize_subgraph(graph)
 
-# plot the subgraph to visualize it with the GraphPlot package
+# plot the subgraph to visualize it
+# uses the GraphPlot package
 # isolated nodes are frames that will not be registered
-# requires using the GraphPlot package
 gplot(subgraph, layout=spring_layout, arrowlengthfrac=0.03)
+```
 
+Once you're satisfied with the graph, you can save it:
+
+```julia
 # saves subgraph to a text file containing a list of edges
 output_graph(subgraph, "/path/to/data/registration_problems_1.txt")
 ```
