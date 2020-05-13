@@ -8,8 +8,9 @@ Generates an elastix difficulty file based on the given heuristic.
     other parameters have been initialized correctly. It is assumed that the function outputs floating-point values.
 """
 function generate_elastix_difficulty(rootpath::String, frames, difficulty_file::String, heuristic)
+    n = length(frames)
     difficulty = zeros(n,n)
-    for i in 1:n
+    @showprogress for i in 1:n
         for j in 1:n
             # skip duplicate calculations
             if j <= i
