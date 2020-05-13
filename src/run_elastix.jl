@@ -16,7 +16,7 @@ function read_head_pos(head_path::String)
     open(head_path) do f
         for line in eachline(f)
             l = split(line)
-            head_pos[parse(Int16, l[1])] = Tuple(map(x->parse(Float64, x), l[2:end]))
+            head_pos[parse(Int16, l[1])] = Tuple(map(x->parse(Int32, x), l[2:end]))
         end
     end
     return head_pos
