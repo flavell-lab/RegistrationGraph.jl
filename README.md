@@ -42,6 +42,7 @@ min_ind, subgraph, maximum_problem_chain = optimize_subgraph(graph)
 
 # plot the subgraph to visualize it with the GraphPlot package
 # isolated nodes are frames that will not be registered
+# requires using the GraphPlot package
 gplot(subgraph, layout=spring_layout, arrowlengthfrac=0.03)
 
 # saves subgraph to a text file containing a list of edges

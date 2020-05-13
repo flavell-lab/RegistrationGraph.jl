@@ -149,12 +149,14 @@ end
 """
 Deletes a problematic `frame::Integer` from a graph `graph::SimpleWeightedGraph` without changing frame indices.
 """
-function remove_frame!(graph::SimpleWeightedGraph, frame::Integer)
-    # set weights of all edges from the frame to infinity
-    # thereby preventing it from being included in any shortest path
-    for n in neighbors(graph, frame)
-        add_edge!(graph, frame, n, Inf)
+function remove_frame(graph::SimpleWeightedGraph, frame::Integer)
+    new_graph = SimpleWeightedGraph(nv(graph))
+    for edge in edges(graph)
+        if frame != src(edge) && frame != dst(edge)
+            add_edge!(new_graph, src(edge), dst(edge), weight(edge))
+        end
     end
+    return new_graph
 end
 
 
