@@ -1,7 +1,7 @@
 module RegistrationGraph
 
-using MHDIO, Images, Statistics, LinearAlgebra, GraphPlot, LightGraphs, 
-        SimpleWeightedGraphs, ProgressMeter, Interact, Plots, Dates, Printf
+using MHDIO, Images, Statistics, LinearAlgebra, GraphPlot, LightGraphs, FlavellBase,
+        SimpleWeightedGraphs, ProgressMeter, Interact, Plots, Dates, Printf, ImageDataIO
 
 include("make_elastix_difficulty.jl")
 include("assess_registration_quality.jl")
@@ -11,7 +11,6 @@ include("make_registration_graph.jl")
 export
     generate_elastix_difficulty,
     make_quality_dict,
-    load_registration_problems,
     write_sbatch_graph,
     load_graph,
     to_dict,

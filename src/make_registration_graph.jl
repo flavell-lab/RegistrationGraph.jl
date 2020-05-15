@@ -194,24 +194,6 @@ function update_graph(rootpath::String, reg_quality_arr::Array{String,1}, graph:
 end
 
 """
-Loads a set of registration problems into an array.
-# Arguments:
-- `rootpath::String`: working directory of registration quality data
-- `edge_files::Array{String, 1}`: files containing registration problems
-"""
-function load_registration_problems(rootpath::String, edge_files::Array{String,1})
-    reg_problems = []
-    for edge_file in edge_files
-        open(joinpath(rootpath, edge_file)) do f
-            for line in eachline(f)
-                push!(reg_problems, Tuple(map(x->parse(Int64, x), split(line))))
-            end
-        end
-    end
-    return reg_problems
-end
-
-"""
 Removes previous registrations from the subgraph.
 # Arguments:
 - `rootpath::String`: working directory of registration quality data

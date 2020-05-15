@@ -1,28 +1,4 @@
 """
-Creates a directory if it doesn't exist yet.
-"""
-function create_dir(dirpath::String)
-    if !isdir(dirpath)
-        mkdir(dirpath)
-    end
-end
-
-"""
-Reads the worm head position from the file `head_path::String`.
-Returns a dictionary mapping frame => head position of the worm at that frame.
-"""
-function read_head_pos(head_path::String)
-    head_pos = Dict()
-    open(head_path) do f
-        for line in eachline(f)
-            l = split(line)
-            head_pos[parse(Int16, l[1])] = Tuple(map(x->parse(Int32, x), l[2:end]))
-        end
-    end
-    return head_pos
-end
-
-"""
 Syncs data from local computer to a remote server and creates command files for elastix on that server.
 WARNING: This program can permanently delete data if run with incorrect arguments.
 # Arguments
