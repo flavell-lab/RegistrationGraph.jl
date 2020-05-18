@@ -2,6 +2,10 @@
 
 A collection of tools for running elastix registration. Suppose there is a set of N frames to be registered, but the frames are too dissimilar to be able to ensure a quality registration for each pair of frames. In this case, it is often helpful to generate a heuristic to evaluate how similar two frames are to each other (and hence, how likely elastix will be to succeed). Once such a heuristic can be determined, registration problems can be selected to minimize difficulty and maximum path length, as a graph optimization problem. This package provides several heuristics for various registration problems, graph theory solutions for constructing the registration problem graph, and automated syncing of scripts and data to the OpenMind server.
 
+## Prerequisites
+
+This package requires you to have previously installed the `FlavellBase.jl`, `ImageDataIO.jl`, and `MHDIO.jl` packages from the `flavell-lab` github repository.
+
 ## Creating an elastix difficulty file from frame difference heuristics
 
 The package `WormFeatureDetector.jl` contains a variety of heuristics that can be used to assess the difference between two frames; consult that package to find a heuristic appropriate for your situations. Once you've identified such a heuristic, you will need to condense it down to a function, giving it all the parameters in advance:
