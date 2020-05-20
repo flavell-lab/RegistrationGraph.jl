@@ -1,6 +1,8 @@
 """
 Generates an elastix difficulty file based on the given heuristic.
-# Arguments:
+
+# Arguments
+
 - `rootpath::String`: working directory path; all other directory inputs are relative to this
 - `frames`: array of frames to include in difficulty calculation
 - `heuristic`: a heuristic function that evaluates "distance" betwen two frames.

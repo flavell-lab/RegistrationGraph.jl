@@ -5,6 +5,7 @@ A collection of tools for running elastix registration. Suppose there is a set o
 ## Prerequisites
 
 This package requires you to have previously installed the `FlavellBase.jl`, `ImageDataIO.jl`, and `MHDIO.jl` packages from the `flavell-lab` github repository.
+The example code provided here assumes the `FlavellBase` and `ImageDataIO` packages have been loaded in the current Julia environment.
 
 ## Creating an elastix difficulty file from frame difference heuristics
 
