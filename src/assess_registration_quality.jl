@@ -11,8 +11,8 @@ It is assumed that smaller values are better for the metrics.
     The evaluation functions will be given `rootpath`, `fixed`, `moving`, `resolution`, and possibly `mask_dir` as input, so be sure their
     other parameters have been initialized correctly. It is assumed that the functions output floating-point metric values.
 - `selection_metric::String`: which metric should be used to select the best registration out of the set of possible registrations
-- `resolutions`: an array of resolution values to be using. Each value is represented as a tuple `(i,j)`, where `i` is the parameter file
-    and `j` is the resolution for registrations using that parameter file.
+- `resolutions`: an array of resolution values to be using. Each value is represented as a tuple `(i,j)`, where `i` is the number of parameter file
+    to use and `j` is the resolution for registrations using that parameter file. Both are 0-indexed.
 ## Optional Keyword Arguments
 - `mask_dir::String`: directory to a mask file. Statistics will not be computed on regions outside the mask.
     If left blank, no mask will be used or passed to the evaluation functions.
