@@ -163,13 +163,19 @@ end
 """
 Recomputes the difficulty graph based on registration quality data.
 Returns a new graph where difficulties of registration problems are scaled by the quality metric.
+
 # Arguments
+
 - `rootpath::String`: working directory of registration quality data
 - `reg_quality_arr::Array{String,1}` is an array of filenames containing registration quality data.
 - `graph::SimpleWeightedGraph` is the difficulty graph to be updated
 - `metric::String` is which quality metric to use to update the graph
+
+# Optional keyword arguments
+
+- `metric_tfm`: Function to apply to each metric value. Default identity.
 """
-function update_graph(rootpath::String, reg_quality_arr::Array{String,1}, graph::SimpleWeightedGraph, metric::String)
+function update_graph(rootpath::String, reg_quality_arr::Array{String,1}, graph::SimpleWeightedGraph, metric::String; metric_tfm=identity)
     new_graph = copy(graph)
     d = to_dict(graph)
     for reg_quality in reg_quality_arr
@@ -185,7 +191,7 @@ function update_graph(rootpath::String, reg_quality_arr::Array{String,1}, graph:
                 end
                 moving,fixed = map(x->parse(Int32, x), split(data[1], "to"))
                 metric_val = parse(Float64, data[idx])
-                new_difficulty = d[moving][fixed] * metric_val
+                new_difficulty = d[moving][fixed] * metric_tfm(metric_val)
                 add_edge!(new_graph, moving, fixed, new_difficulty)
             end
         end
