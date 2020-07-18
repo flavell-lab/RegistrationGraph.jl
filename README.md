@@ -75,6 +75,9 @@ problems = load_registration_problems(["/path/to/data/registration_problems_1.tx
 # syncs data to server and generates sbatch files for elastix
 write_sbatch_graph(problems, "/path/to/data", "/path/to/data/on/openmind", "img_prefix", 
 ["/path/to/parameters/on/openmind/affine_parameters.txt", "/path/to/parameters/on/openmind/bspline_parameters.txt"], 2, "your_username"; head_path="head_pos.txt")
+
+# syncs data back from server
+sync_registered_data("/path/to/data", "/path/to/data/on/openmind", "your_username")
 ```
 
 ## Checking elastix quality

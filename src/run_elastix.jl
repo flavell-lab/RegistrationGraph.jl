@@ -144,3 +144,23 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         run(Cmd(["rsync", "-rlDvzu", "--delete", joinpath(data_dir_local, mask_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, mask_dir)]))
     end
 end
+
+"""
+Syncs registration data from a remote compute server back to the local computer.
+
+# Arguments
+
+- `data_dir_local::String`: Working directory of the data on your machine.
+- `data_dir_remote::String`: Working directory of data on the remote server.
+- `user::String`: Your username on the server.
+
+# Optional Keyword Arguments
+
+- `reg_dir::String`: Path to registered data on server, relative to `data_dir_remote`. Default `Registered`
+- `server::String`: Location of the server containing elastix. Default `openmind7.mit.edu`
+"""
+function sync_registered_data(data_dir_local::String, data_dir_remote::String, user::String; reg_dir="Registered", server="openmind7.mit.edu")
+    create_dir(joinpath(data_dir_local, reg_dir))
+    run(Cmd(["rsync", "-rlDvzu", "$(user)@$(server):"*joinpath(data_dir_remote, reg_dir*"/"), joinpath(data_dir_local, reg_dir)]))
+    run(Cmd(["rsync", "-rlDvzu", "$(user)@$(server):"*joinpath(data_dir_remote, reg_dir*"/"), joinpath(data_dir_local, reg_dir)]))
+end
