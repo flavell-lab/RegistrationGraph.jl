@@ -80,7 +80,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         if use_sbatch
             script_str *= "#!/bin/bash
             #SBATCH --job-name=elx
-            #SBATCH --output=$(log_dir)
+            #SBATCH --output=$(log_dir)/elx_$(dir).txt
             #SBATCH --nodes=1
             #SBATCH --ntasks=1
             #SBATCH --cpus-per-task=$(cpu_per_task)
