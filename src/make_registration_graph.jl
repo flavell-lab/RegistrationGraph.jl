@@ -92,6 +92,67 @@ function optimize_subgraph(graph::SimpleWeightedGraph)
 end
 
 """
+Makes a subgraph of a `graph`, where each node is connected to their `degree` closest neighbors.
+Returns the subgraph, and an array of nodes that were disconnected from the rest of the nodes.
+"""
+function make_voting_subgraph(graph::SimpleWeightedGraph, degree::Integer)
+    subgraph = SimpleWeightedDiGraph(nv(graph))
+    added_edges = []
+    dict = to_dict(graph)
+    for vertex1 in keys(dict)
+        sorted_distances = sort([dist for dist in dict[vertex1]], by=dist->dist[2])
+        for (vertex2, dist) in sorted_distances[1:degree]
+            v1 = min(vertex1, vertex2)
+            v2 = max(vertex1, vertex2)
+            if !((v1, v2) in added_edges)
+                push!(added_edges, (v1, v2))
+                add_edge!(subgraph, v1, v2, dist)
+            end
+        end
+    end
+    unconnected = find_unconnected(added_edges)
+    if length(unconnected) > 0
+        println("WARNING: Disconnected graph")
+    end
+    return (subgraph, unconnected)
+end
+
+"""
+Finds a set of nodes that aren't connected to the rest of the nodes through the `edges`.
+"""
+function find_unconnected(edges)
+    vertices = []
+    for edge in edges
+        if !(edge[1] in vertices)
+            push!(vertices, edge[1])
+        end
+        if !(edge[2] in vertices)
+            push!(vertices, edge[2])
+        end
+    end
+
+    connected_vertices = [vertices[1]]
+    updated = true
+    while updated
+        updated = false
+        for edge in edges
+            if (edge[1] in connected_vertices) && !(edge[2] in connected_vertices)
+                push!(connected_vertices, edge[2])
+                updated = true
+            end
+            if (edge[2] in connected_vertices) && !(edge[1] in connected_vertices)
+                push!(connected_vertices, edge[1])
+                updated = true
+            end
+        end
+    end
+    
+    return [vertex for vertex in vertices if !(vertex in connected_vertices)]
+end
+
+
+
+"""
 Loads an adjacency matrix from a file and stores it as a graph.
 You can specify a function to apply to each weight.
 This is often helpful in cases where the heuristic obeys the triangle inequality,

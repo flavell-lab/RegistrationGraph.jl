@@ -18,5 +18,6 @@ export
     optimize_subgraph,
     output_graph,
     update_graph,
-    remove_previous_registrations
+    remove_previous_registrations,
+    make_voting_subgraph
 end # module
