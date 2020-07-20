@@ -31,7 +31,7 @@ function make_quality_dict(rootpath::String, problem_path::String, outfile::Stri
                 write(quality, rpad(name, 13))
             end
             write(quality, "\n")
-            for prob in eachline(f)
+            @showprogress for prob in eachline(f)
                 moving,fixed = map(x->parse(Int16, x), split(prob, " "))
                 best_resolution = nothing
                 best_result = Inf
@@ -59,7 +59,6 @@ function make_quality_dict(rootpath::String, problem_path::String, outfile::Stri
                         end
                     end
                 end
-                println(dict)
                 for metric in func_names
                     write(quality, rpad(@sprintf("%.2f", dict[(moving,fixed)][best_resolution][metric]), 13))
                 end
