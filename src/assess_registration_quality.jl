@@ -24,47 +24,45 @@ function make_quality_dict(rootpath::String, problem_path::String, outfile::Stri
     best_reg = Dict()
     errors = Dict()
     func_names = keys(evaluation_functions)
-    open(joinpath(rootpath, problem_path), "r") do f
-        open(joinpath(rootpath, outfile), "w") do quality
-            write(quality, rpad("Registration", 16))
-            for name in func_names
-                write(quality, rpad(name, 13))
-            end
-            write(quality, "\n")
-            @showprogress for prob in eachline(f)
-                moving,fixed = map(x->parse(Int16, x), split(prob, " "))
-                best_resolution = nothing
-                best_result = Inf
-                dict[(moving, fixed)] = Dict()
-                errors[(moving, fixed)] = Dict()
-                for resolution in resolutions
-                    dict[(moving, fixed)][resolution] = Dict()
-                    errors[(moving, fixed)][resolution] = Dict()
-                    for metric in func_names
-                        func = evaluation_functions[metric]
-                        try
-                            if mask_dir == ""
-                                result = func(rootpath, moving, fixed, resolution)
-                            else
-                                result = func(rootpath, moving, fixed, resolution, mask_dir)
-                            end
-                            dict[(moving,fixed)][resolution][metric] = result
-                            if metric == selection_metric && result < best_result
-                                best_result = result
-                                best_resolution = resolution
-                            end
-                        catch e
-                            dict[(moving,fixed)][resolution][metric] = Inf
-                            errors[(moving, fixed)][resolution][metric] = e
+    open(joinpath(rootpath, outfile), "w") do quality
+        write(quality, rpad("Registration", 16))
+        for name in func_names
+            write(quality, rpad(name, 13))
+        end
+        write(quality, "\n")
+        problems = load_registration_problems(rootpath, [problem_path])
+        @showprogress for (moving, fixed) in problems
+            best_resolution = nothing
+            best_result = Inf
+            dict[(moving, fixed)] = Dict()
+            errors[(moving, fixed)] = Dict()
+            for resolution in resolutions
+                dict[(moving, fixed)][resolution] = Dict()
+                errors[(moving, fixed)][resolution] = Dict()
+                for metric in func_names
+                    func = evaluation_functions[metric]
+                    try
+                        if mask_dir == ""
+                            result = func(rootpath, moving, fixed, resolution)
+                        else
+                            result = func(rootpath, moving, fixed, resolution, mask_dir)
                         end
+                        dict[(moving,fixed)][resolution][metric] = result
+                        if metric == selection_metric && result < best_result
+                            best_result = result
+                            best_resolution = resolution
+                        end
+                    catch e
+                        dict[(moving,fixed)][resolution][metric] = Inf
+                        errors[(moving, fixed)][resolution][metric] = e
                     end
                 end
-                for metric in func_names
-                    write(quality, rpad(@sprintf("%.2f", dict[(moving,fixed)][best_resolution][metric]), 13))
-                end
-                write(quality, "\n")
-                best_reg[prob] = best_resolution
             end
+            for metric in func_names
+                write(quality, rpad(@sprintf("%.2f", dict[(moving,fixed)][best_resolution][metric]), 13))
+            end
+            write(quality, "\n")
+            best_reg[(moving, fixed)] = best_resolution
         end
     end
     return dict, best_reg, errors
