@@ -19,7 +19,7 @@ It is assumed that smaller values are better for the metrics.
     If left blank, no mask will be used or passed to the evaluation functions.
 """
 function make_quality_dict(rootpath::String, problem_path::String, outfile::String, evaluation_functions::Dict,
-        selection_metric::String, resolutions; mask_dir::String="")
+    selection_metric::String, resolutions; mask_dir::String="")
     dict = Dict()
     best_reg = Dict()
     errors = Dict()
@@ -35,7 +35,11 @@ function make_quality_dict(rootpath::String, problem_path::String, outfile::Stri
                 moving,fixed = map(x->parse(Int16, x), split(prob, " "))
                 best_resolution = nothing
                 best_result = Inf
+                dict[(moving, fixed)] = Dict()
+                errors[(moving, fixed)] = Dict()
                 for resolution in resolutions
+                    dict[(moving, fixed)][resolution] = Dict()
+                    errors[(moving, fixed)][resolution] = Dict()
                     for metric in func_names
                         func = evaluation_functions[metric]
                         try
@@ -44,17 +48,18 @@ function make_quality_dict(rootpath::String, problem_path::String, outfile::Stri
                             else
                                 result = func(rootpath, moving, fixed, resolution, mask_dir)
                             end
-                            dict[(moving,fixed)] = Dict(resolution => Dict(metric => result))
+                            dict[(moving,fixed)][resolution][metric] = result
                             if metric == selection_metric && result < best_result
                                 best_result = result
                                 best_resolution = resolution
                             end
                         catch e
-                            dict[(moving,fixed)] = Dict(resolution => Dict(metric => Inf))
-                            errors[(moving, fixed)] = Dict(resolution => e)
+                            dict[(moving,fixed)][resolution][metric] = Inf
+                            errors[(moving, fixed)][resolution][metric] = e
                         end
                     end
                 end
+                println(dict)
                 for metric in func_names
                     write(quality, rpad(@sprintf("%.2f", dict[(moving,fixed)][best_resolution][metric]), 13))
                 end
@@ -65,4 +70,5 @@ function make_quality_dict(rootpath::String, problem_path::String, outfile::Stri
     end
     return dict, best_reg, errors
 end
+
 
