@@ -1,6 +1,7 @@
 """
 Computes the quality of registration using NCC, nearest-neighbors distance between centroids, and manual annotation.
-Returns a dictionary of registration quality values for each resolution, and another dictionary of the best resolution for each problem.
+Returns a dictionary of registration quality values for each resolution, another dictionary of the best resolution for each problem,
+and a dictionary of registration resolutions that failed.
 Outputs a text file containing registration quality values at the best resolution.
 It is assumed that smaller values are better for the metrics.
 # Arguments
@@ -21,6 +22,7 @@ function make_quality_dict(rootpath::String, problem_path::String, outfile::Stri
         selection_metric::String, resolutions; mask_dir::String="")
     dict = Dict()
     best_reg = Dict()
+    errors = Dict()
     func_names = keys(evaluation_functions)
     open(joinpath(rootpath, problem_path), "r") do f
         open(joinpath(rootpath, outfile), "w") do quality
@@ -36,15 +38,20 @@ function make_quality_dict(rootpath::String, problem_path::String, outfile::Stri
                 for resolution in resolutions
                     for metric in func_names
                         func = evaluation_functions[metric]
-                        if mask_dir == ""
-                            result = func(rootpath, moving, fixed, resolution)
-                        else
-                            result = func(rootpath, moving, fixed, resolution, mask_dir)
-                        end
-                        dict[(moving,fixed)][resolution][metric] = result
-                        if metric == selection_metric && result < best_result
-                            best_result = result
-                            best_resolution = resolution
+                        try
+                            if mask_dir == ""
+                                result = func(rootpath, moving, fixed, resolution)
+                            else
+                                result = func(rootpath, moving, fixed, resolution, mask_dir)
+                            end
+                            dict[(moving,fixed)] = Dict(resolution => Dict(metric => result))
+                            if metric == selection_metric && result < best_result
+                                best_result = result
+                                best_resolution = resolution
+                            end
+                        catch e
+                            dict[(moving,fixed)] = Dict(resolution => Dict(metric => Inf))
+                            errors[(moving, fixed)] = Dict(resolution => e)
                         end
                     end
                 end
@@ -56,6 +63,6 @@ function make_quality_dict(rootpath::String, problem_path::String, outfile::Stri
             end
         end
     end
-    return dict, best_reg
+    return dict, best_reg, errors
 end
 
