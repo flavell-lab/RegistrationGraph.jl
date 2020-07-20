@@ -32,7 +32,7 @@ function make_quality_dict(rootpath::String, problem_path::String, outfile::Stri
         write(quality, "\n")
         problems = load_registration_problems(rootpath, [problem_path])
         @showprogress for (moving, fixed) in problems
-            best_resolution = nothing
+            best_resolution = resolutions[1]
             best_result = Inf
             dict[(moving, fixed)] = Dict()
             errors[(moving, fixed)] = Dict()
