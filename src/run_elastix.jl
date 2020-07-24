@@ -29,6 +29,9 @@ WARNING: This program can permanently delete data if run with incorrect argument
 - `cpu_per_task::Integer`: Number of CPUs to use for each elastix instance. Default 16.
 - `mem::Integer`: Amount of memory in GB to use for each elastix instance. Default 4.
 - `duration::Time`: Maximum amount of time elastix can run before being killed. Default 8 hours.
+- `green_to_red::Bool`: Register green to red channel in the same frame, rather than register different frames
+     If true, disables elastix registration and forces Euler registration. Default false.
+- `green_channel::Integer`: If `green_to_red` is true, the green channel. Otherwise, has no effect.
 """
 function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::String, img_prefix::String,
         parameter_files::Array{String,1}, channel::Integer, user::String;
