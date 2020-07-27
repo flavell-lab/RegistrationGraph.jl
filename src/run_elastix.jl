@@ -129,12 +129,12 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         for pfile in parameter_files
             script_str *= " -p $(pfile)"
         end
-    end
-    # write elastix script
-    script_str = mapfoldl(x->lstrip(x) * "\n", *, split(script_str, "\n"))
-    filename = joinpath(script_dir, "$(dir).sh")
-    open(filename, "w") do f
-        write(f, script_str)
+        # write elastix script
+        script_str = mapfoldl(x->lstrip(x) * "\n", *, split(script_str, "\n"))
+        filename = joinpath(script_dir, "$(dir).sh")
+        open(filename, "w") do f
+            write(f, script_str)
+        end
     end
 
     println("Syncing data to server...")
