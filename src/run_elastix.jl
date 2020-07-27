@@ -29,9 +29,7 @@ WARNING: This program can permanently delete data if run with incorrect argument
 - `cpu_per_task::Integer`: Number of CPUs to use for each elastix instance. Default 16.
 - `mem::Integer`: Amount of memory in GB to use for each elastix instance. Default 4.
 - `duration::Time`: Maximum amount of time elastix can run before being killed. Default 8 hours.
-- `green_to_red::Bool`: Register green to red channel in the same frame, rather than register different frames
-     If true, disables elastix registration and forces Euler registration. Default false.
-- `green_channel::Integer`: If `green_to_red` is true, the green channel. Otherwise, has no effect.
+- `fixed_channel::Integer`: If set, the channel of the fixed frame will be this instead of `channel`.
 """
 function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::String, img_prefix::String,
         parameter_files::Array{String,1}, channel::Integer, user::String;
@@ -49,9 +47,11 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         cpu_per_task::Integer=16, 
         mem::Integer=4, 
         duration::Time=Dates.Time(8,0,0),
-        green_to_red::Bool=false,
-        green_channel::Integer=1)
+        fixed_channel::Integer=nothing)
 
+    if fixed_channel == nothing
+        fixed_channel = channel
+    end
     # make sure cmd_dir ends with /, otherwise rsync will not work
     if cmd_dir[end] != "/"
         cmd_dir*="/"
@@ -101,51 +101,42 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         reg = joinpath(data_dir_remote, reg_dir, dir)
         script_str *= "[ ! -d $(reg) ] && mkdir $(reg)\n"
 
-        # if registering green to red channel, only do Euler
-        if green_to_red
+        # Euler registration
+        if use_euler
             script_str *= "python $(euler_path)"*
-                " "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(fixed_final)_ch$(channel).mhd")*
-                " "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(moving_final)_ch$(green_channel).mhd")*
+                " "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(fixed_final)_ch$(fixed_channel).mhd")*
+                " "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")*
                 " "*joinpath(data_dir_remote, reg_dir, dir, "$(dir)_euler.txt")*
                 " $(head_pos[edge[2]][1]),$(head_pos[edge[2]][2])"*
                 " $(head_pos[edge[1]][1]),$(head_pos[edge[1]][2])\n"
-        else
-            # Euler registration
-            if use_euler
-                script_str *= "python $(euler_path)"*
-                    " "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(fixed_final)_ch$(channel).mhd")*
-                    " "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")*
-                    " "*joinpath(data_dir_remote, reg_dir, dir, "$(dir)_euler.txt")*
-                    " $(head_pos[edge[2]][1]),$(head_pos[edge[2]][2])"*
-                    " $(head_pos[edge[1]][1]),$(head_pos[edge[1]][2])\n"
-            end
-            
-            # elastix image and output parameters
-            script_str *= elastix_path*
-                " -f "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(fixed_final)_ch$(channel).mhd")*
-                " -m "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")*
-                " -out "*joinpath(data_dir_remote, reg_dir, dir)
-            # mask parameters
-            if mask_dir != ""
-                script_str *= " -fMask "*joinpath(data_dir_remote, mask_dir, "$(img_prefix)_t$(fixed_final)_ch$(channel).mhd")*
-                " -mMask "*joinpath(data_dir_remote, mask_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")
-            end
-            # initial condition parameters
-            if use_euler
-                script_str *= " -t0 "*joinpath(data_dir_remote, reg_dir, dir, "$(dir)_euler.txt")
-            end
-            # add parameter files
-            for pfile in parameter_files
-                script_str *= " -p $(pfile)"
-            end
         end
-        # write elastix script
-        script_str = mapfoldl(x->lstrip(x) * "\n", *, split(script_str, "\n"))
-        filename = joinpath(script_dir, "$(dir).sh")
-        open(filename, "w") do f
-            write(f, script_str)
+        
+        # elastix image and output parameters
+        script_str *= elastix_path*
+            " -f "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(fixed_final)_ch$(fixed_channel).mhd")*
+            " -m "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")*
+            " -out "*joinpath(data_dir_remote, reg_dir, dir)
+        # mask parameters
+        if mask_dir != ""
+            script_str *= " -fMask "*joinpath(data_dir_remote, mask_dir, "$(img_prefix)_t$(fixed_final)_ch$(fixed_channel).mhd")*
+            " -mMask "*joinpath(data_dir_remote, mask_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")
+        end
+        # initial condition parameters
+        if use_euler
+            script_str *= " -t0 "*joinpath(data_dir_remote, reg_dir, dir, "$(dir)_euler.txt")
+        end
+        # add parameter files
+        for pfile in parameter_files
+            script_str *= " -p $(pfile)"
         end
     end
+    # write elastix script
+    script_str = mapfoldl(x->lstrip(x) * "\n", *, split(script_str, "\n"))
+    filename = joinpath(script_dir, "$(dir).sh")
+    open(filename, "w") do f
+        write(f, script_str)
+    end
+
     println("Syncing data to server...")
     # make necessary directories on server
     run(Cmd(["ssh", "-f", "$(user)@$(server)", "[ ! -d $(data_dir_remote) ] && mkdir $(data_dir_remote)"]))
