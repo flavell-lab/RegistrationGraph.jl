@@ -47,9 +47,9 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         cpu_per_task::Integer=16, 
         mem::Integer=4, 
         duration::Time=Dates.Time(8,0,0),
-        fixed_channel::Integer=nothing)
+        fixed_channel::Integer=-1)
 
-    if fixed_channel == nothing
+    if fixed_channel == -1
         fixed_channel = channel
     end
     # make sure cmd_dir ends with /, otherwise rsync will not work
