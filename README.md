@@ -10,6 +10,7 @@ A collection of tools for running elastix registration. Suppose there is a set o
 - Ensure that you are using a Unix-based shell. This comes by default on Mac and Linux systems, but on Windows, it is recommended to install Ubuntu (Windows Subsystem for Linux) through the Windows Store and run the code from the Ubuntu terminal.
 - Install the `rsync` program if it isn't installed already
 - [Set up `ssh` keys into OpenMind.](https://www.digitalocean.com/community/tutorials/how-to-set-up-ssh-keys--2) Leave the passphrase blank, and don't do step 4.
+- Install Anaconda3 on OpenMind and install the `h5py`, `SimpleITK`, `scipy`, and `skimage` packages. (I have a copy at `/om/user/aaatanas/anaconda3` with packages set up if you just want to copy it.)
 
 ## Creating an elastix difficulty file from frame difference heuristics
 
