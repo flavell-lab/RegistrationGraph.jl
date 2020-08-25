@@ -47,11 +47,14 @@ graph = load_graph("/path/to/data/elastix_difficulty.txt")
 graph = remove_frame(graph, 3)
 
 # generates set of registration problems from the graph
-min_ind, subgraph, maximum_problem_chain = optimize_subgraph(graph)
+# let's say we want at least 5 edges from each node
+subgraph = make_voting_subgraph(graph, 5)
 
 # plot the subgraph to visualize it
 # uses the GraphPlot package
 # isolated nodes are frames that will not be registered
+# NOTE: in Julia v1.4 and up, `gplot` loses the ability to plot weighted graphs
+# you will need to manually copy the graph to an unweighted graph for plotting
 gplot(subgraph, layout=spring_layout, arrowlengthfrac=0.03)
 ```
 
@@ -76,8 +79,12 @@ problems = load_registration_problems(["/path/to/data/registration_problems_1.tx
 write_sbatch_graph(problems, "/path/to/data", "/path/to/data/on/openmind", "img_prefix", 
 ["/path/to/parameters/on/openmind/affine_parameters.txt", "/path/to/parameters/on/openmind/bspline_parameters.txt"], 2, "your_username"; head_path="head_pos.txt")
 
-# syncs data back from server
+# syncs data back from server (run this after elastix registration has finished)
 sync_registered_data("/path/to/data", "/path/to/data/on/openmind", "your_username")
+
+# elastix has its transform paramete files use absolute paths - these need to be converted to the path on your machine
+# replace [0,4] with resolutions of the data you're using - I have 4 incremental transform parameter files only for the second (bspline) regisration
+fix_param_paths(problems, "/path/to/data", "/path/to/data/on/openmind", [0,4])
 ```
 
 ## Checking elastix quality
@@ -92,35 +99,11 @@ The `make_quality_dict` function takes as input a list of metrics, and evaluates
 # because all input functions must have exactly the parameters rootpath, moving, fixed, resolution
 # if you're using a mask, the keyword parameter mask_dir will also be provided to the function
 evaluation_functions = Dict()
-evaluaction_functions["metric1"] = (rootpath, moving, fixed, resolution) -> compute_metric1(rootpath, moving, fixed, resolution, param1, param2, param3)
+evaluation_functions["metric1"] = (rootpath, moving, fixed, resolution) -> compute_metric1(rootpath, moving, fixed, resolution, param1, param2, param3)
 evaluation_functions["metric2"] = (roopath, moving, fixed, resolution) -> compute_metric2(rootpath, moving, fixed, resolution, param4, param5)
 
 # now, compute and output quality dictionary
 q_dict, best_reg = make_quality_dict("/path/to/data", "registration_problems_1.txt", "registration_quality_1.txt", evaluation_functions, "metric1", [(0,0), (0,1), (1,0), (1,1)])
-```
-
-## Regenerating the Graph
-
-After you have made a quality assessment of the registration problems, you can regenerate the registration graph taking this information into account. The algorithm will scale each difficulty by the registration quality, and then regenerate the graph.
-
-```julia
-# let's say this is our third registration attempt
-iter = 3
-
-# update graph based on registration quality from all previous iterations
-new_graph = update_graph(["registration_quality_$(i).txt" for i=1:iter-1], graph, "metric1")
-
-# regenerate set of registration problems from the new graph
-min_ind_new, subgraph_new, maximum_problem_chain_new = optimize_subgraph(new_graph)
-
-# plot the new subgraph
-gplot(subgraph_new, layout=spring_layout, arrowlengthfrac=0.03)
-
-# get registration problems that haven't been done before in any previous iteration
-subgraph_new_purged = remove_previous_registrations(subgraph_new, ["registration_problems_$(i).txt" for i=1:iter-1])
-
-# save subgraph to a text file containing a list of edges for the next stage of registration
-output_graph(subgraph_new_purged, "/path/to/data/registration_problems_$(iter).txt")
 ```
 
 ## Extracting Data

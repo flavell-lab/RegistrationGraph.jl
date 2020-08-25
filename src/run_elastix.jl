@@ -170,3 +170,40 @@ function sync_registered_data(data_dir_local::String, data_dir_remote::String, u
     run(Cmd(["rsync", "-rlDvzu", "$(user)@$(server):"*joinpath(data_dir_remote, reg_dir*"/"), joinpath(data_dir_local, reg_dir)]))
     run(Cmd(["rsync", "-rlDvzu", "$(user)@$(server):"*joinpath(data_dir_remote, reg_dir*"/"), joinpath(data_dir_local, reg_dir)]))
 end
+
+"""
+Updates parameter paths in transform parameter files, to allow `transformix` to be run on them.
+
+# Arguments
+- `problems`: Registration problems to update
+- `rootpath::String`: Working directory of the data on your machine.
+- `data_dir_remote::String`: Working directory of data on the remote server.
+- `resolutions`: Array of number of elastix resolutions that have transform parameter files for each parameter file.
+
+# Optional keyword arguments
+- `reg_dir::String`: Directory of registered data. Default `Registered`.
+"""
+function fix_param_paths(problems, rootpath::String, remote_data_path::String, resolutions; reg_dir::String="Registered")
+    errors = Dict()
+    @showprogress for problem in problems
+        errors[problem] = Dict()
+        dir = joinpath(rootpath, reg_dir, "$(problem[1])to$(problem[2])")
+        for i=1:length(resolutions)
+            filename = joinpath(dir, "TransformParameters.$(i-1).txt")
+            try
+            modify_parameter_file(filename, filename, Dict(remote_data_path => rootpath); is_universal=true)
+            catch e
+                errors[problem][i] = e
+            end
+            for j=1:resolutions[i]
+                filename = joinpath(dir, "TransformParameters.$(i-1).R$(j-1).txt")
+                try
+                    modify_parameter_file(filename, filename, Dict(remote_data_path => rootpath); is_universal=true)
+                catch e
+                    errors[problem][(i,j)] = e
+                end
+            end
+        end
+    end
+    return errors
+end

@@ -208,7 +208,7 @@ function output_graph(subgraph::SimpleWeightedDiGraph, outfile::String)
 end
 
 """
-Deletes a problematic `frame::Integer` from a graph `graph::SimpleWeightedGraph` without changing frame indices.
+Given a graph `graph::SimpleWeightedGraph` and a problematic `frame::Integer`, deletes the frame from the graph without changing frame indices.
 """
 function remove_frame(graph::SimpleWeightedGraph, frame::Integer)
     new_graph = SimpleWeightedGraph(nv(graph))
