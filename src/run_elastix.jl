@@ -173,6 +173,7 @@ end
 
 """
 Updates parameter paths in transform parameter files, to allow `transformix` to be run on them.
+Returns a dictionary of errors per problem and resolution.
 
 # Arguments
 - `problems`: Registration problems to update
