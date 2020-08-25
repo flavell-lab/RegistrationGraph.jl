@@ -114,7 +114,7 @@ The `make_diff_pngs` command creates a PNG file that does this:
 ```julia
 fixed = 10
 moving = 5
-make_diff_pngs("/path/to/data", "img_prefix", fixed, moving)
+make_diff_pngs("/path/to/data", "img_prefix", fixed, moving, resolutions)
 ```
 
 You can also directly compare an image to a registration-mapped image, together with their ROIs:
