@@ -20,5 +20,6 @@ export
     update_graph,
     remove_previous_registrations,
     make_voting_subgraph,
-    sync_registered_data
+    sync_registered_data,
+    fix_param_paths
 end # module
