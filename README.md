@@ -4,7 +4,7 @@ A collection of tools for running elastix registration. Suppose there is a set o
 
 ## Prerequisites
 
-- This package requires you to have previously installed the `FlavellBase.jl`, `ImageDataIO.jl`, and `MHDIO.jl` packages from the `flavell-lab` github repository.
+- This package requires you to have previously installed the `FlavellBase.jl`, `MHDIO.jl`,  `ImageDataIO.jl`, `WormCurveFinder.jl`, `WormFeatureDetector.jl`, and `SegmentationTools.jl` packages from the `flavell-lab` github repository (in that order).
 - The example code provided here assumes the `FlavellBase` and `ImageDataIO` packages have been loaded in the current Julia environment.
 - [Set up an OpenMind account](https://github.mit.edu/MGHPCC/openmind/wiki/Cookbook:-Getting-started)
 - Ensure that you are using a Unix-based shell. This comes by default on Mac and Linux systems, but on Windows, it is recommended to install Ubuntu (Windows Subsystem for Linux) through the Windows Store and run the code from the Ubuntu terminal.
@@ -89,7 +89,7 @@ fix_param_paths(problems, "/path/to/data", "/path/to/data/on/openmind", [0,4])
 
 ## Checking elastix quality
 
-After running elastix on a set of registration problems, it is likely that many, but not all, of them will succeed. By running a quality metric, such as those implemented in the `RegistrationQualityMetrics.jl` package, the algorithm's perceived difficulty of registration pairs can be modified based on how well elastix performed in each instance. This allows the graph to be regenerated to get around the failed registrations, so that elastix can be run again. By iterating this process, it is possible to get all but a very small number of frames to be registered correctly.
+After running elastix on a set of registration problems, it is likely that many, but not all, of them will succeed. By running a quality metric, the algorithm's perceived difficulty of registration pairs can be modified based on how well elastix performed in each instance. This allows the optimal resolution to be selected, and helps subsequent algorithms evaluate how strongly to weight each registration.
 
 The `make_quality_dict` function takes as input a list of metrics, and evaluates them on all resolutions of the registration. Note that smaller values are better (0 is perfect registration). Example code:
 
@@ -99,13 +99,30 @@ The `make_quality_dict` function takes as input a list of metrics, and evaluates
 # because all input functions must have exactly the parameters rootpath, moving, fixed, resolution
 # if you're using a mask, the keyword parameter mask_dir will also be provided to the function
 evaluation_functions = Dict()
-evaluation_functions["metric1"] = (rootpath, moving, fixed, resolution) -> compute_metric1(rootpath, moving, fixed, resolution, param1, param2, param3)
-evaluation_functions["metric2"] = (roopath, moving, fixed, resolution) -> compute_metric2(rootpath, moving, fixed, resolution, param4, param5)
+evaluation_functions["NCC"] = (rootpath, moving, fixed, resolution) ->
+        metric_tfm(calculate_ncc(read_mhd(rootpath, img_prefix, mhd_path, fixed, channel), read_img(MHD(joinpath(rootpath, regdir, "$(moving)to$(fixed)", "result.$(resolution[1]).R$(resolution[2]).mhd")))))
 
 # now, compute and output quality dictionary
-q_dict, best_reg = make_quality_dict("/path/to/data", "registration_problems_1.txt", "registration_quality_1.txt", evaluation_functions, "metric1", [(0,0), (0,1), (1,0), (1,1)])
+q_dict, best_reg = make_quality_dict("/path/to/data", "registration_problems_1.txt", "registration_quality_1.txt", evaluation_functions, "NCC", [(0,0), (0,1), (0,2), (1,0), (1,1), (1,2), (1,3)])
 ```
 
-## Extracting Data
+## Visualizing registration
 
-See the package `ExtractRegisteredData.jl`
+The simplest way to visualize registration quality is by overlaying the moving and fixed images.
+The `make_diff_pngs` command creates a PNG file that does this:
+
+```julia
+fixed = 10
+moving = 5
+make_diff_pngs("/path/to/data", "img_prefix", fixed, moving)
+```
+
+You can also directly compare an image to a registration-mapped image, together with their ROIs:
+
+```julia
+# previously, load fixed and moving images and ROIs
+visualize_roi_predictions(fixed_image_rois, moving_image_rois, fixed_image, moving_image)
+```
+
+If you've already run an algorithm to match ROIs between the two images, you can set the keyword variable
+`roi_match` to display the match on the plot as well.
