@@ -1,7 +1,7 @@
 """
 Computes the NCC of two image arrays `moving` and `fixed` corresponding to a registration.
 """
-function calculate_ncc(moving::Array{Float64}, fixed::Array{Float64})
+function calculate_ncc(moving, fixed)
     @assert(size(fixed) == size(moving))
     
     med_f = median(maximum(fixed, dims=3))
