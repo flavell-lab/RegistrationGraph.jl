@@ -160,7 +160,7 @@ function visualize_roi_predictions(img_roi, img_roi_regmap, img, img_regmap;
         n_imgs = 5
     end
 
-    m = size(plot_imgs[5])[3]
+    m = size(plot_imgs[1])[3]
     @manipulate for z=1:m
         make_plot_grid([(i == 1) || (i == 3) ? plot_imgs[i][:,:,min(max(z-z_offset,1),m)] : plot_imgs[i][:,:,z] for i in 1:length(plot_imgs)], n_imgs, plot_size)
     end
