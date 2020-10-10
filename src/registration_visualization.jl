@@ -154,10 +154,10 @@ function visualize_roi_predictions(img_roi, img_roi_regmap, img, img_regmap;
     end
     push!(plot_imgs, map(x->colors_regmap[x+1], img_roi_regmap))
 
-    n_imgs = 5
+    n_imgs = 4
     if make_rgb
         push!(plot_imgs, gen_regmap_rgb(img_roi, img_roi_regmap; color_brightness=1))
-        n_imgs = 4
+        n_imgs = 5
     end
 
     m = size(plot_imgs[5])[3]
