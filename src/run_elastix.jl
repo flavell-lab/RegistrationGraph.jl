@@ -39,7 +39,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         reg_dir::String="Registered",
         log_dir::String="log",
         euler_path::String="/om/user/aaatanas/euler_registration/euler_head_rotate.py",
-        euler_logfile::String="euler.log"
+        euler_logfile::String="euler.log",
         head_path::String="",
         elastix_path::String="/om/user/jungsoo/Src/elastixBuild/elastix-build/bin/elastix",
         cmd_dir::String="elx_commands",
