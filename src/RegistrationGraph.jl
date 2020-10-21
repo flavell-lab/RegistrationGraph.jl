@@ -35,5 +35,6 @@ export
     calculate_ncc,
     metric_tfm,
     run_elastix_openmind,
-    get_squeue_status
+    get_squeue_status,
+    wait_for_elastix
 end # module

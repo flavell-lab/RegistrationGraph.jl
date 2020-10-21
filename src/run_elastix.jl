@@ -17,6 +17,7 @@ WARNING: This program can permanently delete data if run with incorrect argument
 - `log_dir::String`: Elastix output log directory. Default `log`.
 - `euler_path::String`: Directory to program to do Euler registration. Defaults to Adam Atanas's version.
     If set to the empty string, Euler registration will not be performed.
+- `euler_logfile::String`: Filename of Euler output. Default `euler.log`
 - `head_path::String`: Path to a file containing locations of the worm's head.
     This must be provided if Euler registration is being used.
 - `elastix_path::String`: Directory to elastix binary. Defaults to Jungsoo Kim's version.
@@ -38,6 +39,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         reg_dir::String="Registered",
         log_dir::String="log",
         euler_path::String="/om/user/aaatanas/euler_registration/euler_head_rotate.py",
+        euler_logfile::String="euler.log"
         head_path::String="",
         elastix_path::String="/om/user/jungsoo/Src/elastixBuild/elastix-build/bin/elastix",
         cmd_dir::String="elx_commands",
@@ -110,7 +112,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
                 " "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")*
                 " "*joinpath(data_dir_remote, reg_dir, dir, "$(dir)_euler.txt")*
                 " $(head_pos[edge[2]][1]),$(head_pos[edge[2]][2])"*
-                " $(head_pos[edge[1]][1]),$(head_pos[edge[1]][2])\n"
+                " $(head_pos[edge[1]][1]),$(head_pos[edge[1]][2]) > $(joinpath(data_dir_remote, reg_dir, dir, euler_logfile))\n"
         end
         
         # elastix image and output parameters
@@ -169,7 +171,7 @@ Runs elastix on OpenMind. Requires `julia` to be installed under the relevant
 - `server::String`: OpenMind server to ssh into. Default openmind7.mit.edu
 """
 function run_elastix_openmind(cmd_dir_remote::String, tmp_dir::String, user::String;
-    server="openmind7.mit.edu")
+    server::String="openmind7.mit.edu")
     run(`ssh $(user)@$(server) "ls -d $(joinpath(cmd_dir_remote, "*")) > $(tmp_dir)/elx_commands.txt; julia -e \"using SLURMManager; submit_scripts(\\\"$(tmp_dir)/elx_commands.txt\\\", priority=\\\"--partition=use-everything\\\")\""`)
 end
 
@@ -183,11 +185,28 @@ Gets the number of running and pending `squeue` commands from the given user.
 # Optional keyword arguments
 - `server::String`: OpenMind server to ssh into. Default openmind7.mit.edu
 """
-function get_squeue_status(user::String; server="openmind7.mit.edu")
+function get_squeue_status(user::String; server::String="openmind7.mit.edu")
     running = run_parse_int(pipeline(`ssh $(user)@$(server) "julia -e \"using SLURMManager; println(squeue_n_running(\\\"$(user)\\\"))\""`))
     pending = run_parse_int(pipeline(`ssh $(user)@$(server) "julia -e \"using SLURMManager; println(squeue_n_pending(\\\"$(user)\\\"))\""`))
     return running + pending
 end
+
+"""
+This function stalls until all the user's jobs on OpenMind are completed.
+
+# Arguments
+- `user::String`: Username on OpenMind
+
+# Optional keyword arguments
+- `delay::Integer`: Time to wait between server queries, in seconds. Default 300.
+- `server::String`: OpenMind server to ssh into. Default openmind7.mit.edu
+"""
+function wait_for_elastix(user::String; delay::Integer=300, server::String="openmind7.mit.edu")
+    while get_squeue_status(user; server=server) > 0
+        sleep(delay)
+    end
+end
+
 
 
 
