@@ -172,7 +172,7 @@ Runs elastix on OpenMind. Requires `julia` to be installed under the relevant
 """
 function run_elastix_openmind(cmd_dir_remote::String, tmp_dir::String, user::String;
     server::String="openmind7.mit.edu")
-    run(`ssh $(user)@$(server) "ls -d $(joinpath(cmd_dir_remote, "*")) > $(tmp_dir)/elx_commands.txt; julia -e \"using SLURMManager; submit_scripts(\\\"$(tmp_dir)/elx_commands.txt\\\", priority=\\\"--partition=use-everything\\\")\""`)
+    run(`ssh $(user)@$(server) "ls -d $(joinpath(cmd_dir_remote, "*")) > $(tmp_dir)/elx_commands.txt; julia -e \"using SLURMManager; submit_scripts(\\\"$(tmp_dir)/elx_commands.txt\\\", partition=\\\"use-everything\\\")\""`)
 end
 
 
