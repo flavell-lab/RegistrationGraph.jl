@@ -21,6 +21,7 @@ WARNING: This program can permanently delete data if run with incorrect argument
     This must be provided if Euler registration is being used.
 - `elastix_path::String`: Directory to elastix binary. Defaults to Jungsoo Kim's version.
 - `cmd_dir::String`: Directory to store elastix command files. Default `elx_commands`
+- `clear_cmd_dir::Bool`: Whether to clear command directory on OpenMind before syncing. Default true.
 - `mask_dir::String`: Directory of mask files to be given to elastix. Mask files are assumed to have the same
     filenames as the corresponding MHD files. If left empty, elastix will not use a mask.
 - `server::String`: Location of the server containing elastix. Default `openmind7.mit.edu`
@@ -36,17 +37,18 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         MHD_dir::String="MHD",
         reg_dir::String="Registered",
         log_dir::String="log",
-        euler_path::String="/om/user/aaatanas/euler_registration/euler_init_keypoint_rot.py",
+        euler_path::String="/om/user/aaatanas/euler_registration/euler_head_rotate.py",
         head_path::String="",
         elastix_path::String="/om/user/jungsoo/Src/elastixBuild/elastix-build/bin/elastix",
         cmd_dir::String="elx_commands",
+        clear_cmd_dir::Bool=true,
         mask_dir::String="",
         server::String="openmind7.mit.edu",
         use_sbatch::Bool=true,
         email::String="", 
         cpu_per_task::Integer=16, 
         mem::Integer=4, 
-        duration::Time=Dates.Time(8,0,0),
+        duration::Time=Dates.Time(3,0,0),
         fixed_channel::Integer=-1)
 
     if fixed_channel == -1
@@ -139,17 +141,55 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
 
     println("Syncing data to server...")
     # make necessary directories on server
-    run(Cmd(["ssh", "-f", "$(user)@$(server)", "[ ! -d $(data_dir_remote) ] && mkdir $(data_dir_remote)"]))
-    run(Cmd(["ssh", "-f", "$(user)@$(server)", "[ ! -d $(log_dir) ] && mkdir $(log_dir)"]))
+    run(Cmd(["ssh", "$(user)@$(server)", "[ ! -d $(data_dir_remote) ] && mkdir $(data_dir_remote)"]))
+    run(Cmd(["ssh", "$(user)@$(server)", "[ ! -d $(log_dir) ] && mkdir $(log_dir)"]))
     reg = joinpath(data_dir_remote, reg_dir)
+    run(Cmd(["ssh", "$(user)@$(server)", "[ ! -d $(reg) ] && mkdir $(reg)"]))
     # sync all data to the server
-    run(Cmd(["ssh", "-f", "$(user)@$(server)", "[ ! -d $(reg) ] && mkdir $(reg)"]))
-    run(Cmd(["rsync", "-rlDvzu", "--delete", joinpath(data_dir_local, cmd_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, cmd_dir)]))
-    run(Cmd(["rsync", "-rlDvzu", "--delete", joinpath(data_dir_local, MHD_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, MHD_dir)]))
+    if clear_cmd_dir
+        run(Cmd(["rsync", "-r", "--delete", joinpath(data_dir_local, cmd_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, cmd_dir)]))
+    else
+        run(Cmd(["rsync", "-r", joinpath(data_dir_local, cmd_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, cmd_dir)]))
+    end
+    run(Cmd(["rsync", "-r", "--delete", joinpath(data_dir_local, MHD_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, MHD_dir)]))
     if mask_dir != ""
-        run(Cmd(["rsync", "-rlDvzu", "--delete", joinpath(data_dir_local, mask_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, mask_dir)]))
+        run(Cmd(["rsync", "-r", "--delete", joinpath(data_dir_local, mask_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, mask_dir)]))
     end
 end
+
+"""
+Runs elastix on OpenMind. Requires `julia` to be installed under the relevant 
+
+# Arguments
+- `cmd_dir_remote::String`: Directory on OpenMind where the elastix sbatch scripts will be stored.
+- `tmp_dir::String`: Temporary directory to store scripts and lists
+- `user::String`: Username on OpenMind
+
+# Optional keyword arguments
+- `server::String`: OpenMind server to ssh into. Default openmind7.mit.edu
+"""
+function run_elastix_openmind(cmd_dir_remote::String, tmp_dir::String, user::String;
+    server="openmind7.mit.edu")
+    run(`ssh $(user)@$(server) "ls -d $(joinpath(cmd_dir_remote, "*")) > $(tmp_dir)/elx_commands.txt; julia -e \"using SLURMManager; submit_scripts(\\\"$(tmp_dir)/elx_commands.txt\\\", priority=\\\"--partition=use-everything\\\")\""`)
+end
+
+
+"""
+Gets the number of running and pending `squeue` commands from the given user.
+
+# Arguments
+- `user::String`: Username on OpenMind
+
+# Optional keyword arguments
+- `server::String`: OpenMind server to ssh into. Default openmind7.mit.edu
+"""
+function get_squeue_status(user::String; server="openmind7.mit.edu")
+    running = run_parse_int(pipeline(`ssh $(user)@$(server) "julia -e \"using SLURMManager; println(squeue_n_running(\\\"$(user)\\\"))\""`))
+    pending = run_parse_int(pipeline(`ssh $(user)@$(server) "julia -e \"using SLURMManager; println(squeue_n_pending(\\\"$(user)\\\"))\""`))
+    return running + pending
+end
+
+
 
 """
 Syncs registration data from a remote compute server back to the local computer.
@@ -167,8 +207,7 @@ Syncs registration data from a remote compute server back to the local computer.
 """
 function sync_registered_data(data_dir_local::String, data_dir_remote::String, user::String; reg_dir="Registered", server="openmind7.mit.edu")
     create_dir(joinpath(data_dir_local, reg_dir))
-    run(Cmd(["rsync", "-rlDvzu", "$(user)@$(server):"*joinpath(data_dir_remote, reg_dir*"/"), joinpath(data_dir_local, reg_dir)]))
-    run(Cmd(["rsync", "-rlDvzu", "$(user)@$(server):"*joinpath(data_dir_remote, reg_dir*"/"), joinpath(data_dir_local, reg_dir)]))
+    run(Cmd(["rsync", "-r", "$(user)@$(server):"*joinpath(data_dir_remote, reg_dir*"/"), joinpath(data_dir_local, reg_dir)]))
 end
 
 """
