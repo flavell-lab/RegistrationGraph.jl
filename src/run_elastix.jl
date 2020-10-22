@@ -62,9 +62,11 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
     end
     script_dir=joinpath(data_dir_local, cmd_dir)
 
-    # erase previous scripts and replace them with new onces
-    println("Resetting $(script_dir)...")
-    rm(script_dir, recursive=true, force=true)
+    # erase previous scripts and replace them with new ones
+    if clear_cmd_dir
+        println("Resetting $(script_dir)...")
+        rm(script_dir, recursive=true, force=true)
+    end
     create_dir(script_dir)
     duration_str = Dates.format(duration, "HH:MM:SS")
 
@@ -143,10 +145,10 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
 
     println("Syncing data to server...")
     # make necessary directories on server
-    run(Cmd(["ssh", "$(user)@$(server)", "[ ! -d $(data_dir_remote) ] && mkdir $(data_dir_remote)"]))
-    run(Cmd(["ssh", "$(user)@$(server)", "[ ! -d $(log_dir) ] && mkdir $(log_dir)"]))
+    run(`ssh $(user)@$(server) "mkdir -p $(data_dir_remote)"`)
+    run(`ssh $(user)@$(server) "mkdir -p $(log_dir)"`)
     reg = joinpath(data_dir_remote, reg_dir)
-    run(Cmd(["ssh", "$(user)@$(server)", "[ ! -d $(reg) ] && mkdir $(reg)"]))
+    run(`ssh $(user)@$(server) "mkdir -p $(reg)"`)
     # sync all data to the server
     if clear_cmd_dir
         run(Cmd(["rsync", "-r", "--delete", joinpath(data_dir_local, cmd_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, cmd_dir)]))
@@ -169,10 +171,17 @@ Runs elastix on OpenMind. Requires `julia` to be installed under the relevant
 
 # Optional keyword arguments
 - `server::String`: OpenMind server to ssh into. Default openmind7.mit.edu
+- `partition::String`: Partition to run scripts on in sbatch. Default use-everything
 """
-function run_elastix_openmind(cmd_dir_remote::String, tmp_dir::String, user::String;
-    server::String="openmind7.mit.edu")
-    run(`ssh $(user)@$(server) "ls -d $(joinpath(cmd_dir_remote, "*")) > $(tmp_dir)/elx_commands.txt; julia -e \"using SLURMManager; submit_scripts(\\\"$(tmp_dir)/elx_commands.txt\\\", partition=\\\"use-everything\\\")\""`)
+function run_elastix_openmind(cmd_dir_remote::String, temp_dir::String, user::String;
+    server::String="openmind7.mit.edu", partition::String="use-everything")
+    temp_file = joinpath(temp_dir, "elx_commands.txt")
+    all_temp_files = joinpath(temp_dir, "*")
+    all_script_files = joinpath(cmd_dir_remote, "*")
+    run(`ssh $(user)@$(server) "mkdir -p $(temp_dir)"`)
+    run(`ssh $(user)@$(server) "rm -f $(all_temp_files)"`)
+    run(`ssh $(user)@$(server) "ls -d $(all_script_files) > $(temp_file)"`)
+    run(`ssh $(user)@$(server) "julia -e \"using SLURMManager; submit_scripts(\\\"$(temp_file)\\\", partition=\\\"$(partition)\\\")\""`)
 end
 
 
