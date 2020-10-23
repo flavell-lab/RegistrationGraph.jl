@@ -21,7 +21,12 @@ WARNING: This program can permanently delete data if run with incorrect argument
 - `head_path::String`: Path to a file containing locations of the worm's head.
     This must be provided if Euler registration is being used.
 - `elastix_path::String`: Directory to elastix binary. Defaults to Jungsoo Kim's version.
-- `cmd_dir::String`: Directory to store elastix command files. Default `elx_commands`
+- `cmd_dir::String`: Directory to store elastix command files. Default `elx_commands`,
+- `cmd_dir_array::String`: Directory to store sbatch arrays that run elastix command files.
+    If set to the empty string, no arrays will be generated. Default `elx_commands_array`
+- `array_job_name::String`: Name of array job files, subscripted with an index. Default `elx`.
+- `array_size::Integer`: Number of commands per array. Default 700.
+- `run_elx_command::String`: Path to a bash script on OpenMind that runs a script from a line in a text file list of scripts
 - `clear_cmd_dir::Bool`: Whether to clear command directory on OpenMind before syncing. Default true.
 - `mask_dir::String`: Directory of mask files to be given to elastix. Mask files are assumed to have the same
     filenames as the corresponding MHD files. If left empty, elastix will not use a mask.
@@ -43,6 +48,10 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         head_path::String="",
         elastix_path::String="/om/user/jungsoo/Src/elastixBuild/elastix-build/bin/elastix",
         cmd_dir::String="elx_commands",
+        cmd_dir_array::String="elx_commands_array",
+        array_job_name::String="elx",
+        array_size::Integer=700,
+        run_elx_command::String="/om/user/aaatanas/run_elastix_command.sh",
         clear_cmd_dir::Bool=true,
         mask_dir::String="",
         server::String="openmind7.mit.edu",
@@ -61,6 +70,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         cmd_dir*="/"
     end
     script_dir=joinpath(data_dir_local, cmd_dir)
+    script_dir_array=joinpath(data_dir_local, cmd_dir_array)
 
     # erase previous scripts and replace them with new ones
     if clear_cmd_dir
@@ -68,6 +78,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         rm(script_dir, recursive=true, force=true)
     end
     create_dir(script_dir)
+    create_dir()
     duration_str = Dates.format(duration, "HH:MM:SS")
 
     # Euler registration requires knowing worm head location
@@ -82,26 +93,54 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
 
     log_dir = joinpath(data_dir_remote, log_dir)
     println("Writing elastix script files...")
-    for edge in edges
+    count = 1
+    edges_in_arr = []
+    for i in 1:length(edges)
+        edge = edges[i]
         dir=string(edge[1])*"to"*string(edge[2])
+        push!(edges_in_arr, joinpath(data_dir_remote, cmd_dir, dir*".sh"))
         script_str=""
         fixed_final=lpad(edge[2],4,"0")
         moving_final=lpad(edge[1],4,"0")
-        # set sbatch parameters
+        # set sbatch parameters in script
         if use_sbatch
-            script_str *= "#!/bin/bash
-            #SBATCH --job-name=elx
-            #SBATCH --output=$(log_dir)/elx_$(dir).txt
-            #SBATCH --nodes=1
-            #SBATCH --ntasks=1
-            #SBATCH --cpus-per-task=$(cpu_per_task)
-            #SBATCH --time=$(duration_str)
-            #SBATCH --mem=$(mem)G\n"
-            if email != ""
-                script_str *= "#SBATCH --mail-user=$(email)
-                #SBATCH --mail-type=END\n"
+            # if using array, only set them in array
+            if cmd_dir_array == ""
+                script_str *= "#!/bin/bash
+                #SBATCH --job-name=elx
+                #SBATCH --output=$(log_dir)/elx_$(dir).txt
+                #SBATCH --nodes=1
+                #SBATCH --ntasks=1
+                #SBATCH --cpus-per-task=$(cpu_per_task)
+                #SBATCH --time=$(duration_str)
+                #SBATCH --mem=$(mem)G\n"
+                if email != ""
+                    script_str *= "#SBATCH --mail-user=$(email)
+                    #SBATCH --mail-type=END\n"
+                end
+            elseif length(edges_in_arr) == array_size || i == length(edges)
+                # modify in case we finished all the scripts
+                modified_array_size = length(edges_in_arr)
+                array_str = "#!/bin/bash
+                #SBATCH --job_name=$(array_job_name)
+                #SBATCH --nodes=1
+                #SBATCH --array=1-$(modified_array_size)
+                #SBATCH --cpus-per-task=$(cpu_per_task)
+                #SBATCH --time=$(duration_str)
+                #SBATCH --mem=$(mem)G\n"
+                if email != ""
+                    array_str *= "#SBATCH --mail-user=$(email)
+                    #SBATCH --mail-type=END\n"
+                end
+                script_list_file = joinpath(data_dir_remote, cmd_dir, "$(array_job_name)_$(count).txt")
+                array_str *= "$(run_elx_command) $(script_list_file) \$SLURM_ARRAY_TASK_ID\n"
+                write_txt(joinpath(data_dir_local, cmd_dir, "$(array_job_name)_$(count).txt"), reduce((x,y)->x*"\n"*y, edges_in_arr))
+                write_txt(joinpath(data_dir_local, cmd_dir_array, "$(array_job_name)_$(count).sh"), array_str)
+                count += 1
+                edges_in_arr = []
             end
         end
+
 
         # make directory
         reg = joinpath(data_dir_remote, reg_dir, dir)
@@ -152,8 +191,14 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
     # sync all data to the server
     if clear_cmd_dir
         run(Cmd(["rsync", "-r", "--delete", joinpath(data_dir_local, cmd_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, cmd_dir)]))
+        if cmd_dir_array != ""
+            run(Cmd(["rsync", "-r", "--delete", joinpath(data_dir_local, cmd_dir_array*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, cmd_dir_array)]))
+        end
     else
         run(Cmd(["rsync", "-r", joinpath(data_dir_local, cmd_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, cmd_dir)]))
+        if cmd_dir_array != ""
+            run(Cmd(["rsync", "-r", joinpath(data_dir_local, cmd_dir_array*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, cmd_dir_array)]))
+        end
     end
     run(Cmd(["rsync", "-r", "--delete", joinpath(data_dir_local, MHD_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, MHD_dir)]))
     if mask_dir != ""
@@ -162,7 +207,8 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
 end
 
 """
-Runs elastix on OpenMind. Requires `julia` to be installed under the relevant 
+Runs elastix on OpenMind. Requires `julia` to be installed under the relevant username and activated in the default ssh shell.
+Note that you cannot have multiple instances of this command running simultaneously with the same `temp_dir`.
 
 # Arguments
 - `cmd_dir_remote::String`: Directory on OpenMind where the elastix sbatch scripts will be stored.
