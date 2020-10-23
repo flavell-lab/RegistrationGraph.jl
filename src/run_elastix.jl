@@ -113,7 +113,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
                 #SBATCH --ntasks=1
                 #SBATCH --cpus-per-task=$(cpu_per_task)
                 #SBATCH --time=$(duration_str)
-                #SBATCH --mem=$(mem)G\n", " ", "")
+                #SBATCH --mem=$(mem)G\n", " " => "")
                 if email != ""
                     script_str *= "#SBATCH --mail-user=$(email)
                     #SBATCH --mail-type=END\n"
@@ -130,7 +130,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
                 #SBATCH --cpus-per-task=$(cpu_per_task)
                 #SBATCH --time=$(duration_str)
                 #SBATCH --mem=$(mem)G
-                #SBATCH --array=1-$(modified_array_size)\n", " ", "")
+                #SBATCH --array=1-$(modified_array_size)\n", " " => "")
                 if email != ""
                     array_str *= "#SBATCH --mail-user=$(email)
                     #SBATCH --mail-type=END\n"
