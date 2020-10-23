@@ -106,14 +106,14 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         if use_sbatch
             # if using array, only set them in array
             if cmd_dir_array == ""
-                script_str *= "#!/bin/bash
+                script_str *= replace("#!/bin/bash
                 #SBATCH --job-name=elx
                 #SBATCH --output=$(log_dir)/elx_$(dir).txt
                 #SBATCH --nodes=1
                 #SBATCH --ntasks=1
                 #SBATCH --cpus-per-task=$(cpu_per_task)
                 #SBATCH --time=$(duration_str)
-                #SBATCH --mem=$(mem)G\n"
+                #SBATCH --mem=$(mem)G\n", " ", "")
                 if email != ""
                     script_str *= "#SBATCH --mail-user=$(email)
                     #SBATCH --mail-type=END\n"
@@ -122,7 +122,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
                 # modify in case we finished all the scripts
                 modified_array_size = length(edges_in_arr)
                 array_str = ""
-                array_str *= "#!/bin/bash
+                array_str *= replace("#!/bin/bash
                 #SBATCH --job_name=$(array_job_name)
                 #SBATCH --output=$(log_dir)/$(array_job_name)_%J.out
                 #SBATCH --error=$(log_dir)/$(array_job_name)_%J.err
@@ -130,7 +130,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
                 #SBATCH --cpus-per-task=$(cpu_per_task)
                 #SBATCH --time=$(duration_str)
                 #SBATCH --mem=$(mem)G
-                #SBATCH --array=1-$(modified_array_size)\n"
+                #SBATCH --array=1-$(modified_array_size)\n", " ", "")
                 if email != ""
                     array_str *= "#SBATCH --mail-user=$(email)
                     #SBATCH --mail-type=END\n"
