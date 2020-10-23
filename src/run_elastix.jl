@@ -25,7 +25,7 @@ WARNING: This program can permanently delete data if run with incorrect argument
 - `cmd_dir_array::String`: Directory to store sbatch arrays that run elastix command files.
     If set to the empty string, no arrays will be generated. Default `elx_commands_array`
 - `array_job_name::String`: Name of array job files, subscripted with an index. Default `elx`.
-- `array_size::Integer`: Number of commands per array. Default 700.
+- `array_size::Integer`: Number of commands per array. Default 500.
 - `run_elx_command::String`: Path to a bash script on OpenMind that runs a script from a line in a text file list of scripts
 - `clear_cmd_dir::Bool`: Whether to clear command directory on OpenMind before syncing. Default true.
 - `mask_dir::String`: Directory of mask files to be given to elastix. Mask files are assumed to have the same
@@ -50,7 +50,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         cmd_dir::String="elx_commands",
         cmd_dir_array::String="elx_commands_array",
         array_job_name::String="elx",
-        array_size::Integer=700,
+        array_size::Integer=500,
         run_elx_command::String="/om/user/aaatanas/run_elastix_command.sh",
         clear_cmd_dir::Bool=true,
         mask_dir::String="",
@@ -78,7 +78,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         rm(script_dir, recursive=true, force=true)
     end
     create_dir(script_dir)
-    create_dir()
+    create_dir(script_dir_array)
     duration_str = Dates.format(duration, "HH:MM:SS")
 
     # Euler registration requires knowing worm head location
