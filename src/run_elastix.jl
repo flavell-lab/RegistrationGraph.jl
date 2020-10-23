@@ -124,8 +124,8 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
                 array_str = ""
                 array_str *= "#!/bin/bash
                 #SBATCH --job_name=$(array_job_name)
-                #SBATCH --output=$(log_dir)/$(array_job_name)_$J.out
-                #SBATCH --error=$(log_dir)/$(array_job_name)_$J.err
+                #SBATCH --output=$(log_dir)/$(array_job_name)_%J.out
+                #SBATCH --error=$(log_dir)/$(array_job_name)_%J.err
                 #SBATCH --nodes=1
                 #SBATCH --cpus-per-task=$(cpu_per_task)
                 #SBATCH --time=$(duration_str)
