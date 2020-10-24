@@ -1,6 +1,6 @@
 module RegistrationGraph
 
-using MHDIO, Images, Statistics, LinearAlgebra, GraphPlot, LightGraphs, FlavellBase, SegmentationTools,
+using MHDIO, Images, Statistics, LinearAlgebra, GraphPlot, LightGraphs, FlavellBase, SegmentationTools, SLURMManager,
         SimpleWeightedGraphs, ProgressMeter, Interact, Plots, Dates, Printf, ImageDataIO, PyPlot
 
 include("make_elastix_difficulty.jl")
@@ -33,5 +33,8 @@ export
     make_diff_pngs_base,
     mhd_to_png,
     calculate_ncc,
-    metric_tfm
+    metric_tfm,
+    run_elastix_openmind,
+    get_squeue_status,
+    wait_for_elastix
 end # module

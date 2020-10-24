@@ -97,6 +97,7 @@ Visualizes a comparison between an ROI image and a registration-mapped version.
  - `roi_match`: matches between ROIs in the two frames, as a dictionary whose keys are ROIs in the moving frame
         and whose values are the corresponding ROIs in the fixed frame.
  - `unmatched_color`: If set, all ROIs in the moving frame without a corresponding match in the fixed frame will be this color.
+ - `make_rgb`: If set, will generate red vs green display of ROI locations.
  - `highlight_rois`: A list of ROIs in the fixed frame to be highlighted.
  - `highlight_regmap_rois`: A list of ROIs in the moving frame to be highlighted.
  - `highlight_color`: Highlight color, as an RGB. Default blue, aka `RGB.(0,0,1)`
@@ -105,7 +106,7 @@ Visualizes a comparison between an ROI image and a registration-mapped version.
  - `z_offset::Integer`: z-offset of the moving image relative to the fixed image; the moving image will be shifted towards z=0 by this amount.
 """
 function visualize_roi_predictions(img_roi, img_roi_regmap, img, img_regmap;
-    color_brightness::Real=0.3, plot_size=(600,600), roi_match=Dict(), unmatched_color=nothing,
+    color_brightness::Real=0.3, plot_size=(600,600), roi_match=Dict(), unmatched_color=nothing, make_rgb=false,
     highlight_rois=[], highlight_regmap_rois=[], highlight_color=RGB.(0,0,1), contrast::Real=2, semantic::Bool=false, z_offset::Integer=0)
     plot_imgs = []
 
@@ -153,11 +154,15 @@ function visualize_roi_predictions(img_roi, img_roi_regmap, img, img_regmap;
     end
     push!(plot_imgs, map(x->colors_regmap[x+1], img_roi_regmap))
 
-    push!(plot_imgs, gen_regmap_rgb(img_roi, img_roi_regmap; color_brightness=1))
+    n_imgs = 4
+    if make_rgb
+        push!(plot_imgs, gen_regmap_rgb(img_roi, img_roi_regmap; color_brightness=1))
+        n_imgs = 5
+    end
 
-    m = size(plot_imgs[5])[3]
+    m = size(plot_imgs[1])[3]
     @manipulate for z=1:m
-        make_plot_grid([(i == 1) || (i == 3) ? plot_imgs[i][:,:,min(max(z-z_offset,1),m)] : plot_imgs[i][:,:,z] for i in 1:length(plot_imgs)], 5, plot_size)
+        make_plot_grid([(i == 1) || (i == 3) ? plot_imgs[i][:,:,min(max(z-z_offset,1),m)] : plot_imgs[i][:,:,z] for i in 1:length(plot_imgs)], n_imgs, plot_size)
     end
 end
 

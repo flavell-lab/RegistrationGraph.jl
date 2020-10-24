@@ -4,13 +4,14 @@ A collection of tools for running elastix registration. Suppose there is a set o
 
 ## Prerequisites
 
-- This package requires you to have previously installed the `FlavellBase.jl`, `MHDIO.jl`,  `ImageDataIO.jl`, `WormCurveFinder.jl`, `WormFeatureDetector.jl`, and `SegmentationTools.jl` packages from the `flavell-lab` github repository (in that order).
+- This package requires you to have previously installed the `FlavellBase.jl`, `MHDIO.jl`,  `ImageDataIO.jl`, `WormCurveFinder.jl`, `WormFeatureDetector.jl`, `SegmentationTools.jl`, and `SLURMManager.jl` packages from the `flavell-lab` github repository (in that order).
 - The example code provided here assumes the `FlavellBase` and `ImageDataIO` packages have been loaded in the current Julia environment.
 - [Set up an OpenMind account](https://github.mit.edu/MGHPCC/openmind/wiki/Cookbook:-Getting-started)
 - Ensure that you are using a Unix-based shell. This comes by default on Mac and Linux systems, but on Windows, it is recommended to install Ubuntu (Windows Subsystem for Linux) through the Windows Store and run the code from the Ubuntu terminal.
 - Install the `rsync` program if it isn't installed already
 - [Set up `ssh` keys into OpenMind.](https://www.digitalocean.com/community/tutorials/how-to-set-up-ssh-keys--2) Leave the passphrase blank, and don't do step 4.
 - Install Anaconda3 on OpenMind and install the `h5py`, `SimpleITK`, `scipy`, and `skimage` packages. (I have a copy at `/om/user/aaatanas/anaconda3` with packages set up if you just want to copy it.)
+- Install Julia on OpenMind and install the `SLURMManager.jl` package inside it. Ensure that Julia is configured to be recognized in your default `ssh` shell.
 
 ## Creating an elastix difficulty file from frame difference heuristics
 
@@ -78,9 +79,15 @@ problems = load_registration_problems(["/path/to/data/registration_problems_1.tx
 
 # syncs data to server and generates sbatch files for elastix
 write_sbatch_graph(problems, "/path/to/data", "/path/to/data/on/openmind", "img_prefix", 
-["/path/to/parameters/on/openmind/affine_parameters.txt", "/path/to/parameters/on/openmind/bspline_parameters.txt"], 2, "your_username"; head_path="head_pos.txt")
+["/path/to/parameters/on/openmind/euler_parameters.txt", "/path/to/parameters/on/openmind/affine_parameters.txt", "/path/to/parameters/on/openmind/bspline_parameters.txt"], 2, "your_username"; head_path="head_pos.txt")
 
-# syncs data back from server (run this after elastix registration has finished)
+# runs elastix on OpenMind
+run_elastix_openmind("/path/to/elx_commands_array", "/path/to/temporary/directory", "your_username")
+
+# waits for elastix to finish running
+wait_for_elastix("your_username")
+
+# syncs data back from server
 sync_registered_data("/path/to/data", "/path/to/data/on/openmind", "your_username")
 
 # elastix has its transform paramete files use absolute paths - these need to be converted to the path on your machine
