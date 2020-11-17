@@ -117,12 +117,6 @@ git-tree-sha1 = "8e695f735fca77e9708e795eda62afdb869cbb70"
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 version = "0.3.4+0"
 
-[[Compose]]
-deps = ["Base64", "Colors", "DataStructures", "Dates", "IterTools", "JSON", "LinearAlgebra", "Measures", "Printf", "Random", "Requires", "UUIDs"]
-git-tree-sha1 = "034174e607d254b8ca0853a1a9029b265114bf6c"
-uuid = "a81c6b42-2e10-5240-aca2-a61377ecd94b"
-version = "0.8.2"
-
 [[ComputationalResources]]
 git-tree-sha1 = "52cb3ec90e8a8bea0e62e275ba577ad0f74821f7"
 uuid = "ed09eef8-17a6-5b46-8889-db040fac31e3"
@@ -289,12 +283,6 @@ deps = ["ColorTypes", "FixedPointNumbers", "LinearAlgebra", "StaticArrays"]
 git-tree-sha1 = "34bfa994967e893ab2f17b864eec221b3521ba4d"
 uuid = "4d00f742-c7ba-57c2-abde-4428a4b178cb"
 version = "0.8.3"
-
-[[GraphPlot]]
-deps = ["ArnoldiMethod", "ColorTypes", "Colors", "Compose", "DelimitedFiles", "LightGraphs", "LinearAlgebra", "Random", "SparseArrays"]
-git-tree-sha1 = "32f72eb61d372429ce8fd2ee9b7079599dacb93b"
-uuid = "a2cc645c-3eea-5389-862e-a155d0052231"
-version = "0.4.2"
 
 [[Graphics]]
 deps = ["Colors", "LinearAlgebra", "NaNMath"]
