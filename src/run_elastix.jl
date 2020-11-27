@@ -37,6 +37,8 @@ WARNING: This program can permanently delete data if run with incorrect argument
 - `mem::Integer`: Amount of memory in GB to use for each elastix instance. Default 1.
 - `duration::Time`: Maximum amount of time elastix can run before being killed. Default 1 hour.
 - `fixed_channel::Integer`: If set, the channel of the fixed frame will be this instead of `channel`.
+- `data_dir_local_moving::String`: If set, the directory of the moving data (if different from that of the fixed data)
+- `data_dir_remote_moving::String`: If set, the directory of the moving data (if different from that of the fixed data)
 """
 function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::String, img_prefix::String,
         parameter_files::Array{String,1}, channel::Integer, user::String;
@@ -60,7 +62,9 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         cpu_per_task::Integer=16, 
         mem::Integer=1, 
         duration::Time=Dates.Time(1,0,0),
-        fixed_channel::Integer=-1)
+        fixed_channel::Integer=-1,
+        data_dir_local_moving::String="",
+        data_dir_remote_moving::String="")
 
     if fixed_channel == -1
         fixed_channel = channel
@@ -68,6 +72,12 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
     # make sure cmd_dir ends with /, otherwise rsync will not work
     if cmd_dir[end] != "/"
         cmd_dir*="/"
+    end
+    if data_dir_local_moving == ""
+        data_dir_local_moving = data_dir_local
+    end
+    if data_dir_remote_moving == ""
+        data_dir_remote_moving = data_dir_remote
     end
     script_dir=joinpath(data_dir_local, cmd_dir)
     script_dir_array=joinpath(data_dir_local, cmd_dir_array)
@@ -89,6 +99,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         end
         println("Getting head position...")
         head_pos = read_head_pos(joinpath(data_dir_local, head_path))
+        head_pos_moving = read_head_pos(joinpath(data_dir_local_moving, head_path))
     end
 
     log_dir = joinpath(data_dir_remote, log_dir)
@@ -153,21 +164,21 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         if use_euler
             script_str *= "python $(euler_path)"*
                 " "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(fixed_final)_ch$(fixed_channel).mhd")*
-                " "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")*
+                " "*joinpath(data_dir_remote_moving, MHD_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")*
                 " "*joinpath(data_dir_remote, reg_dir, dir, "$(dir)_euler.txt")*
                 " $(head_pos[edge[2]][1]),$(head_pos[edge[2]][2])"*
-                " $(head_pos[edge[1]][1]),$(head_pos[edge[1]][2]) > $(joinpath(data_dir_remote, reg_dir, dir, euler_logfile))\n"
+                " $(head_pos_moving[edge[1]][1]),$(head_pos_moving[edge[1]][2]) > $(joinpath(data_dir_remote, reg_dir, dir, euler_logfile))\n"
         end
         
         # elastix image and output parameters
         script_str *= elastix_path*
             " -f "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(fixed_final)_ch$(fixed_channel).mhd")*
-            " -m "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")*
+            " -m "*joinpath(data_dir_remote_moving, MHD_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")*
             " -out "*joinpath(data_dir_remote, reg_dir, dir)
         # mask parameters
         if mask_dir != ""
             script_str *= " -fMask "*joinpath(data_dir_remote, mask_dir, "$(img_prefix)_t$(fixed_final)_ch$(fixed_channel).mhd")*
-            " -mMask "*joinpath(data_dir_remote, mask_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")
+            " -mMask "*joinpath(data_dir_remote_moving, mask_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")
         end
         # initial condition parameters
         if use_euler
@@ -188,6 +199,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
     println("Syncing data to server...")
     # make necessary directories on server
     run(`ssh $(user)@$(server) "mkdir -p $(data_dir_remote)"`)
+    run(`ssh $(user)@$(server) "mkdir -p $(data_dir_remote_moving)"`)
     run(`ssh $(user)@$(server) "mkdir -p $(log_dir)"`)
     reg = joinpath(data_dir_remote, reg_dir)
     run(`ssh $(user)@$(server) "mkdir -p $(reg)"`)
@@ -204,6 +216,9 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         end
     end
     run(Cmd(["rsync", "-r", "--delete", joinpath(data_dir_local, MHD_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, MHD_dir)]))
+    if data_dir_local_moving != data_dir_local
+        run(Cmd(["rsync", "-r", "--delete", joinpath(data_dir_local_moving, MHD_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote_moving, MHD_dir)]))
+    end
     if mask_dir != ""
         run(Cmd(["rsync", "-r", "--delete", joinpath(data_dir_local, mask_dir*"/"), "$(user)@$(server):"*joinpath(data_dir_remote, mask_dir)]))
     end
