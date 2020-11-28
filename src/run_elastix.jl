@@ -39,6 +39,7 @@ WARNING: This program can permanently delete data if run with incorrect argument
 - `fixed_channel::Integer`: If set, the channel of the fixed frame will be this instead of `channel`.
 - `data_dir_local_moving::String`: If set, the directory of the moving data (if different from that of the fixed data)
 - `data_dir_remote_moving::String`: If set, the directory of the moving data (if different from that of the fixed data)
+- `img_prefix_moving::String`: If set, the image prefix of the moving data (if different from that of the fixed data)
 """
 function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::String, img_prefix::String,
         parameter_files::Array{String,1}, channel::Integer, user::String;
@@ -64,7 +65,8 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         duration::Time=Dates.Time(1,0,0),
         fixed_channel::Integer=-1,
         data_dir_local_moving::String="",
-        data_dir_remote_moving::String="")
+        data_dir_remote_moving::String="",
+        img_prefix_moving::String="")
 
     if fixed_channel == -1
         fixed_channel = channel
@@ -78,6 +80,9 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
     end
     if data_dir_remote_moving == ""
         data_dir_remote_moving = data_dir_remote
+    end
+    if img_prefix_moving == ""
+        img_prefix_moving = img_prefix
     end
     script_dir=joinpath(data_dir_local, cmd_dir)
     script_dir_array=joinpath(data_dir_local, cmd_dir_array)
@@ -164,7 +169,7 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         if use_euler
             script_str *= "python $(euler_path)"*
                 " "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(fixed_final)_ch$(fixed_channel).mhd")*
-                " "*joinpath(data_dir_remote_moving, MHD_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")*
+                " "*joinpath(data_dir_remote_moving, MHD_dir, "$(img_prefix_moving)_t$(moving_final)_ch$(channel).mhd")*
                 " "*joinpath(data_dir_remote, reg_dir, dir, "$(dir)_euler.txt")*
                 " $(head_pos[edge[2]][1]),$(head_pos[edge[2]][2])"*
                 " $(head_pos_moving[edge[1]][1]),$(head_pos_moving[edge[1]][2]) > $(joinpath(data_dir_remote, reg_dir, dir, euler_logfile))\n"
@@ -173,12 +178,12 @@ function write_sbatch_graph(edges, data_dir_local::String, data_dir_remote::Stri
         # elastix image and output parameters
         script_str *= elastix_path*
             " -f "*joinpath(data_dir_remote, MHD_dir, "$(img_prefix)_t$(fixed_final)_ch$(fixed_channel).mhd")*
-            " -m "*joinpath(data_dir_remote_moving, MHD_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")*
+            " -m "*joinpath(data_dir_remote_moving, MHD_dir, "$(img_prefix_moving)_t$(moving_final)_ch$(channel).mhd")*
             " -out "*joinpath(data_dir_remote, reg_dir, dir)
         # mask parameters
         if mask_dir != ""
             script_str *= " -fMask "*joinpath(data_dir_remote, mask_dir, "$(img_prefix)_t$(fixed_final)_ch$(fixed_channel).mhd")*
-            " -mMask "*joinpath(data_dir_remote_moving, mask_dir, "$(img_prefix)_t$(moving_final)_ch$(channel).mhd")
+            " -mMask "*joinpath(data_dir_remote_moving, mask_dir, "$(img_prefix_moving)_t$(moving_final)_ch$(channel).mhd")
         end
         # initial condition parameters
         if use_euler
