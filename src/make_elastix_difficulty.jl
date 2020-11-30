@@ -3,27 +3,33 @@ Generates an elastix difficulty file based on the given heuristic.
 
 # Arguments
 
-- `rootpath::String`: working directory path; all other directory inputs are relative to this
-- `frames`: array of frames to include in difficulty calculation
+- `t_range`: list or range of time points to compute the difficulty
 - `heuristic`: a heuristic function that evaluates "distance" betwen two frames.
-    The function will be given `rootpath`, `frame1`, and `frame2 as input, so be sure its
+    The function will be given `t1`, and `t2` as input, so be sure its
     other parameters have been initialized correctly. It is assumed that the function outputs floating-point values.
 """
-function generate_elastix_difficulty(rootpath::String, frames, difficulty_file::String, heuristic)
-    n = length(frames)
-    difficulty = zeros(n,n)
-    @showprogress for i in 1:n
-        for j in 1:n
+function generate_elastix_difficulty(path_elastix_difficulty::String, t_range, heuristic::Function)
+    n_t = length(t_range)
+    difficulty = zeros(n_t, n_t)
+    @showprogress for (i,t1) = enumerate(t_range)
+        for (j,t2) = enumerate(t_range)
             # skip duplicate calculations
             if j <= i
                 continue
             end
-            difficulty[i, j] = heuristic(rootpath, frames[i], frames[j])
+            difficulty[i, j] = heuristic(t1, t2)
         end
     end
-    open(joinpath(rootpath, difficulty_file), "w") do f
-        write(f, string(collect(frames))*"\n")
+    
+    open(path_elastix_difficulty, "w") do f
+        write(f, string(collect(t_range))*"\n")
         write(f, replace(string(difficulty), ";"=>"\n"))
     end
+    
     return difficulty
+end
+
+function generate_elastix_difficulty(param_path::Dict, t_range, heuristic::Function)
+    path_elastix_difficulty = param_path["path_elastix_difficulty"]
+    generate_elastix_difficulty(path_elastix_difficulty, t_range, heuristic)
 end
