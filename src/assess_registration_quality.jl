@@ -5,9 +5,7 @@ and a dictionary of registration resolutions that failed.
 Outputs a text file containing registration quality values at the best resolution.
 It is assumed that smaller values are better for the metrics.
 # Arguments
-- `rootpath::String`: working directory path; all other directory inputs are relative to this
-- `problem_path::String`: path to a file containing list of elastix registration problems
-- `outfile::String`: path to output file for dictionary
+- `problems`: list of registration problems to compute the quality of
 - `evaluation_functions::Dict`: dictionary of metric names to functions that evaluate elastix quality on a pair of images.
     The evaluation functions will be given `rootpath`, `fixed`, `moving`, `resolution`, and possibly `mask_dir` as input, so be sure their
     other parameters have been initialized correctly. It is assumed that the functions output floating-point metric values.
@@ -18,54 +16,43 @@ It is assumed that smaller values are better for the metrics.
 - `mask_dir::String`: directory to a mask file. Statistics will not be computed on regions outside the mask.
     If left blank, no mask will be used or passed to the evaluation functions.
 """
-function make_quality_dict(rootpath::String, problem_path::String, outfile::String, evaluation_functions::Dict,
-    selection_metric::String, resolutions; mask_dir::String="")
+function make_quality_dict(problems, evaluation_functions::Dict, selection_metric::String, resolutions; mask_dir::String="")
     dict = Dict()
     best_reg = Dict()
     errors = Dict()
     func_names = keys(evaluation_functions)
-    open(joinpath(rootpath, outfile), "w") do quality
-        write(quality, rpad("Registration", 16))
-        for name in func_names
-            write(quality, rpad(name, 13))
-        end
-        write(quality, "\n")
-        problems = load_registration_problems(rootpath, [problem_path])
-        @showprogress for (moving, fixed) in problems
-            best_resolution = resolutions[1]
-            best_result = Inf
-            dict[(moving, fixed)] = Dict()
-            errors[(moving, fixed)] = Dict()
-            for resolution in resolutions
-                dict[(moving, fixed)][resolution] = Dict()
-                errors[(moving, fixed)][resolution] = Dict()
-                for metric in func_names
-                    func = evaluation_functions[metric]
-                    try
-                        if mask_dir == ""
-                            result = func(rootpath, moving, fixed, resolution)
-                        else
-                            result = func(rootpath, moving, fixed, resolution, mask_dir)
-                        end
-                        dict[(moving,fixed)][resolution][metric] = result
-                        if metric == selection_metric && result < best_result
-                            best_result = result
-                            best_resolution = resolution
-                        end
-                    catch e
-                        dict[(moving,fixed)][resolution][metric] = Inf
-                        errors[(moving, fixed)][resolution][metric] = e
+    @showprogress for (moving, fixed) in problems
+        best_resolution = resolutions[1]
+        best_result = Inf
+        dict[(moving, fixed)] = Dict()
+        errors[(moving, fixed)] = Dict()
+        for resolution in resolutions
+            dict[(moving, fixed)][resolution] = Dict()
+            errors[(moving, fixed)][resolution] = Dict()
+            for metric in func_names
+                func = evaluation_functions[metric]
+                try
+                    if mask_dir == ""
+                        result = func(moving, fixed, resolution)
+                    else
+                        result = func(moving, fixed, resolution, mask_dir)
                     end
+                    dict[(moving,fixed)][resolution][metric] = result
+                    if metric == selection_metric && result < best_result
+                        best_result = result
+                        best_resolution = resolution
+                    end
+                catch e
+                    dict[(moving,fixed)][resolution][metric] = Inf
+                    errors[(moving, fixed)][resolution][metric] = e
                 end
             end
-            for metric in func_names
-                write(quality, rpad(@sprintf("%.2f", dict[(moving,fixed)][best_resolution][metric]), 13))
-            end
-            write(quality, "\n")
-            best_reg[(moving, fixed)] = best_resolution
         end
+        best_reg[(moving, fixed)] = best_resolution
     end
     return dict, best_reg, errors
 end
 
-
+function make_quality_dict(param::Dict, problems)
+    return make_quality_dict(problems, param["evaluation_functions"], param["quality_metric"], param["good_registration_resolutions"])
+end
