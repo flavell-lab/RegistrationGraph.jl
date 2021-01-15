@@ -211,12 +211,13 @@ The fixed image will be red and the moving image will be green, so yellow indica
 - `contrast_m::Real`: Contrast of moving image portion of PNG. Default 1.
 - `swap_colors::Bool`: If set to `true`, fixed image will be green and moving image will be red.
 """
-function make_diff_pngs(rootpath::String, fixed_img_prefix::String, fixed::Integer, moving::Integer, iters;
-        proj_dim::Integer=3, fixed_ch::Integer=2, regdir::String="Registered", mhd::String="MHD_filtered", result::String="", 
+function make_diff_pngs(param_path::Dict, param::Dict, fixed::Integer, moving::Integer;
+        proj_dim::Integer=3, fixed_ch::Integer=2, regdir_key::String="path_dir_reg", mhd_key="path_dir_mhd_filt" result::String="", 
         contrast_f::Real=1, contrast_m::Real=1, swap_colors::Bool=false)
-    reg_path = rootpath * "/"*regdir*"/" * string(moving) * "to" * string(fixed)
-    fixed_img_path = rootpath * "/"*mhd*"/" * fixed_img_prefix * "_t" * string(fixed, pad=4) * "_ch"*string(fixed_ch)*".mhd"
+    reg_path = param_path[regdir_key]#rootpath * "/"*regdir*"/" * string(moving) * "to" * string(fixed)
+    fixed_img_path = joinpath(param_path[mhd_key], get_basename(fixed, fixed_ch))#rootpath * "/"*mhd*"/" * fixed_img_prefix * "_t" * string(fixed, pad=4) * "_ch"*string(fixed_ch)*".mhd"
     fixed_stack = dropdims(maximum(read_img(MHD(fixed_img_path)), dims=proj_dim), dims=proj_dim)
+    iters = param["reg_n_resolution"]
     error = false
     for i=1:length(iters)
         for j=1:iters[i]

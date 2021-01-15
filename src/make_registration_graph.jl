@@ -124,7 +124,7 @@ split especially difficult registration problems into many steps.
 If this results in too many failed registrations, try increasnig the difficulty_importance parameter;
 conversely, if there is too much error accumulation over long chains of registrations, try decreasing it.
 # Arguments
-- `elx_difficulty::String`: a text file containing a list of frames and an adjacency matrix.
+- `elx_difficulty::String`: a path to a text file containing a list of frames and an adjacency matrix.
 - `func` (optional): a function to apply to each element of the adjacency matrix
 - `difficulty_importance`: if `func` is not provided, it will be set to `x->x^(1+difficulty_importance)`
 Returns a graph `graph::SimpleWeightedGraph` storing the adjacency matrix.
