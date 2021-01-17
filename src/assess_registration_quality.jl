@@ -53,6 +53,7 @@ function make_quality_dict(problems, evaluation_functions::Dict, selection_metri
     return dict, best_reg, errors
 end
 
+
 function make_quality_dict(param::Dict, problems)
     return make_quality_dict(problems, param["evaluation_functions"], param["quality_metric"], param["good_registration_resolutions"])
 end

@@ -193,9 +193,9 @@ Makes PNG files to visualize how well the registration worked, by overlaying fix
 The fixed image will be red and the moving image will be green, so yellow indicates good registration.
 
 # Arguments
-- `rootpath::String`: Working directory path. All other paths are relative to this.
-- `fixed_img_prefix::String`: image prefix for the fixed image, not including the timestamp. It is assumed that the frame's filename 
-    will be, eg, `img_prefix_t0123_ch2.mhd` for frame 123 with channel=2.
+- `param_path::Dict`: Dictionary containing paths to files
+- `param::Dict`: Dictionary containing parameter settings
+- `get_basename::Function`: Function mapping two timepoints to the base MHD filename corresponding to them.
 - `fixed::Integer`: timestamp (frame number) of fixed image
 - `moving::Integer`: timestamp (frame number) of moving image
 - `iters`: array of registration resolutions for each parameter file (eg for affine regstration with 3 resolutions
@@ -204,18 +204,18 @@ The fixed image will be red and the moving image will be green, so yellow indica
 # Optional keyword arguments
 - `proj_dim::Integer`: Dimension to project data. Default 3 (z-dimension)
 - `fixed_ch::Integer`: Channel for the fixed image. Default 2. (The moving image is the image automatically generated from the registration.)
-- `regdir::String`: Directory of registered images. Default `Registered`.
-- `mhd::String`: Directory of MHD files. Default `MHD_filtered`.
+- `regdir_key::String`: Key in `param_path` corresponding to the registration directory. Default `path_dir_reg`.
+- `mhd_key::String`: Key in `param_path` corresponding to the MHD directory. Default `path_dir_mhd_filt`.
 - `result::String`: Name of resulting file. If left as default it the same as the corresponding MHD file.
 - `contrast_f::Real`: Contrast of fixed image portion of PNG. Default 1.
 - `contrast_m::Real`: Contrast of moving image portion of PNG. Default 1.
 - `swap_colors::Bool`: If set to `true`, fixed image will be green and moving image will be red.
 """
-function make_diff_pngs(param_path::Dict, param::Dict, fixed::Integer, moving::Integer;
-        proj_dim::Integer=3, fixed_ch::Integer=2, regdir_key::String="path_dir_reg", mhd_key="path_dir_mhd_filt" result::String="", 
+function make_diff_pngs(param_path::Dict, param::Dict, get_basename::Function, fixed::Integer, moving::Integer;
+        proj_dim::Integer=3, fixed_ch::Integer=2, regdir_key::String="path_dir_reg", mhd_key="path_dir_mhd_filt", result::String="", 
         contrast_f::Real=1, contrast_m::Real=1, swap_colors::Bool=false)
-    reg_path = param_path[regdir_key]#rootpath * "/"*regdir*"/" * string(moving) * "to" * string(fixed)
-    fixed_img_path = joinpath(param_path[mhd_key], get_basename(fixed, fixed_ch))#rootpath * "/"*mhd*"/" * fixed_img_prefix * "_t" * string(fixed, pad=4) * "_ch"*string(fixed_ch)*".mhd"
+    reg_path = joinpath(param_path[regdir_key], string(moving) * "to" * string(fixed))
+    fixed_img_path = joinpath(param_path[mhd_key], get_basename(fixed, fixed_ch))
     fixed_stack = dropdims(maximum(read_img(MHD(fixed_img_path)), dims=proj_dim), dims=proj_dim)
     iters = param["reg_n_resolution"]
     error = false
@@ -252,32 +252,31 @@ Makes PNG files before registration, directly comparing two frames.
 The fixed image will be red and the moving image will be green, so yellow indicates good registration.
 
 # Arguments
-- `rootpath::String`: Working directory path. All other paths are relative to this.
-- `img_prefix::String`: image prefix for both images image, not including the timestamp. It is assumed that the frame's filename 
-    will be, eg, `img_prefix_t0123_ch2.mhd` for frame 123 with channel=2.
+- `param_path::Dict`: Dictionary containing paths to files
+- `get_basename::Function`: Function mapping two timepoints to the base MHD filename corresponding to them.
 - `fixed::Integer`: timestamp (frame number) of fixed image
 - `moving::Integer`: timestamp (frame number) of moving image
 
 # Optional keyword arguments
 - `proj_dim::Integer`: Dimension to project data. Default 3 (z-dimension)
-- `regdir::String`: Directory of registered images. Default `Registered`.
-- `mhd::String`: Directory of MHD files. Default `MHD_filtered`.
+- `regdir_key::String`: Key in `param_path` corresponding to the registration directory. Default `path_dir_reg`.
+- `mhd_key::String`: Key in `param_path` corresponding to the MHD directory. Default `path_dir_mhd_filt`.
 - `moving_ch::Integer`: Channel for the moving image. Default 2.
 - `fixed_ch::Integer`: Channel for the fixed image. Default 2.
 - `contrast_f::Real`: Contrast of fixed image portion of PNG. Default 1.
 - `contrast_m::Real`: Contrast of moving image portion of PNG. Default 1.
 - `swap_colors::Bool`: If set to `true`, fixed image will be green and moving image will be red.
+- `png_name::String`: Name of output file. Default `noreg.png`
 """
-function make_diff_pngs_base(rootpath::String, img_prefix::String, fixed::Integer, moving::Integer;
-        proj_dim::Integer=3, regdir::String="Registered", mhd::String="MHD_filtered", moving_ch::Integer=2, fixed_ch::Integer=2,
-        contrast_f::Real=1, contrast_m::Real=1, swap_colors::Bool=false)
-    reg_path = rootpath * "/"*mhd*"/" * img_prefix * "_t" * string(moving, pad=4) * "_ch$(moving_ch).mhd"
-    png_path = rootpath * "/"*regdir*"/" * string(moving) * "to" * string(fixed) * "/noreg.png"
-    fixed_img_path = rootpath * "/"*mhd*"/" * img_prefix * "_t" * string(fixed, pad=4) * "_ch$(fixed_ch).mhd"
+function make_diff_pngs_base(param_path::Dict, get_basename::Function, fixed::Integer, moving::Integer;
+        proj_dim::Integer=3, regdir_key::String="path_dir_reg", mhd_key="path_dir_mhd_filt", moving_ch::Integer=2, fixed_ch::Integer=2,
+        contrast_f::Real=1, contrast_m::Real=1, swap_colors::Bool=false, png_name="noreg.png")
+    moving_img_path = joinpath(param_path[regdir_key], string(moving) * "to" * string(fixed), get_basename(moving, moving_ch))
+    fixed_img_path = joinpath(param_path[mhd_key], get_basename(fixed, fixed_ch))
+    png_path = joinpath(param_path[regdir_key], string(moving) * "to" * string(fixed), png_name)
     fixed_stack = dropdims(maximum(read_img(MHD(fixed_img_path)), dims=proj_dim), dims=proj_dim)
-    mhd_path = reg_path
     s = size(fixed_stack)
-    moving_stack = dropdims(maximum(read_img(MHD(mhd_path)), dims=proj_dim), dims=proj_dim)
+    moving_stack = dropdims(maximum(read_img(MHD(moving_img_path)), dims=proj_dim), dims=proj_dim)
     m = size(moving_stack)
     fixed_stack = map(x->min(x,1), fixed_stack[1:min(s[1],m[1]),1:min(s[2],m[2])] / maximum(fixed_stack) * contrast_f)
     moving_stack = map(x->min(x,1), moving_stack[1:min(s[1],m[1]),1:min(s[2],m[2])] / maximum(moving_stack) * contrast_m)
