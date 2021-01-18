@@ -46,6 +46,7 @@ function write_sbatch_graph(edges, param_path::Dict, param::Dict, get_basename::
         cpu_per_task_key::String="cpu_per_task", 
         memory_key::String="memory", 
         duration_key::String="duration",
+        job_name_key::String="job_name"
         fixed_channel_key::String="ch_marker",
         moving_channel_key::String="ch_marker",
         data_dir_fixed_key::String="path_root_process",
@@ -115,7 +116,7 @@ function write_sbatch_graph(edges, param_path::Dict, param::Dict, get_basename::
     duration = param[duration_key]
     fixed_channel = param[fixed_channel_key]
     moving_channel = param[moving_channel_key]
-    job_name = param["job_name"]
+    job_name = param[job_name_key]
     email = param["email"]
     use_sbatch = param["use_sbatch"]
     server = param["server"]
