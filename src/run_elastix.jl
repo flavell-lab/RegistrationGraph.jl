@@ -286,7 +286,8 @@ function run_elastix_openmind(param_path::Dict, param::Dict)
     temp_dir = param_path["path_om_tmp"]
     temp_file = joinpath(temp_dir, "elx_commands.txt")
     all_temp_files = joinpath(temp_dir, "*")
-    all_script_files = joinpath(param_path["path_dir_cmd"], "*")
+    cmd_dir_remote = replace(param_path["path_dir_cmd"], param_path["path_root_process"] => param_path["path_om_data"])
+    all_script_files = joinpath(cmd_dir_remote, "*")
     user = param["user"]
     server = param["server"]
     partition = param["partition"]
