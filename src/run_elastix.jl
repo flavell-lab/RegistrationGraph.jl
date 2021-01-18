@@ -60,20 +60,30 @@ function write_sbatch_graph(edges, param_path::Dict, param::Dict, get_basename::
         mask_dir_moving_key::String="path_dir_mask",
         reg_dir_fixed_key::String="path_dir_reg",
         reg_dir_moving_key::String="path_dir_reg",
+        path_head_rotate_key::String="path_head_rotate",
+        parameter_files_key::String="parameter_files",
         get_basename_moving::Union{Function,Nothing}=nothing)
 
     data_dir_local = param_path[data_dir_fixed_key]
     data_dir_local_moving = param_path[data_dir_moving_key]
     data_dir_remote = param_path[data_dir_remote_fixed_key]
     data_dir_remote_moving = param_path[data_dir_remote_moving_key]
-    MHD_dir_local = param_path[MHD_dir_local_fixed_key]
-    MHD_dir_local_moving = param_path[MHD_dir_local_moving_key]
+    MHD_dir_local = param_path[MHD_dir_fixed_key]
+    MHD_dir_local_moving = param_path[MHD_dir_moving_key]
     MHD_dir_remote = replace(MHD_dir_local, data_dir_local => data_dir_remote)
     MHD_dir_remote_moving = replace(MHD_dir_local_moving, data_dir_local_moving => data_dir_remote_moving)
     mask_dir_local = param_path[mask_dir_fixed_key]
     mask_dir_local_moving = param_path[mask_dir_moving_key]
-    mask_dir_remote = replace(mask_dir_local, data_dir_local => data_dir_remote)
-    mask_dir_remote_moving = replace(mask_dir_local_moving, data_dir_local => data_dir_remote_moving)
+    if mask_dir_local !== nothing
+        mask_dir_remote = replace(mask_dir_local, data_dir_local => data_dir_remote)
+    else
+        mask_dir_remote = nothing
+    end
+    if mask_dir_local_moving !== nothing
+        mask_dir_remote_moving = replace(mask_dir_local_moving, data_dir_local => data_dir_remote_moving)
+    else
+        mask_dir_remote_moving = nothing
+    end
     reg_dir_local = param_path[reg_dir_fixed_key]
     reg_dir_local_moving = param_path[reg_dir_moving_key]
     reg_dir_remote = replace(reg_dir_local, data_dir_local => data_dir_remote)
@@ -87,13 +97,18 @@ function write_sbatch_graph(edges, param_path::Dict, param::Dict, get_basename::
 
     cmd_dir_local = param_path["path_dir_cmd"]
     cmd_dir_remote = replace(cmd_dir_local, data_dir_local => data_dir_remote)
-    cmd_dir_local_array = param_path["path_dir_cmd_array"]
-    cmd_dir_remote_array = replace(cmd_dir_local_array, data_dir_local => data_dir_remote)
-    head_rotate_path = param_path["path_head_rotate"]
+    cmd_dir_array_local = param_path["path_dir_cmd_array"]
+    if cmd_dir_array_local !== nothing
+        cmd_dir_array_remote = replace(cmd_dir_array_local, data_dir_local => data_dir_remote)
+    else
+        cmd_dir_array_remote = nothing
+    end
+    head_rotate_path = param_path[path_head_rotate_key]
     log_dir = param_path["path_dir_log"]
     run_elx_command = param_path["path_run_elastix"]
     elastix_path = param_path["path_elastix"]
-    parameter_files = param_path["parameter_files"]
+    parameter_files = param_path[parameter_files_key]
+    euler_logfile = param_path["name_head_rotate_logfile"]
     
     cpu_per_task = param[cpu_per_task_key]
     mem = param[memory_key]
@@ -114,7 +129,7 @@ function write_sbatch_graph(edges, param_path::Dict, param::Dict, get_basename::
         rm(cmd_dir_local, recursive=true, force=true)
     end
     create_dir(cmd_dir_local)
-    create_dir(cmd_dir_local_array)
+    create_dir(cmd_dir_array_local)
     duration_str = Dates.format(duration, "HH:MM:SS")
 
     # Euler registration requires knowing worm head location
@@ -141,7 +156,7 @@ function write_sbatch_graph(edges, param_path::Dict, param::Dict, get_basename::
         # set sbatch parameters in script
         if use_sbatch
             # if using array, only set them in array
-            if cmd_dir_array === nothing
+            if cmd_dir_array_local === nothing
                 script_str *= replace("#!/bin/bash
                 #SBATCH --job-name=$(job_name)
                 #SBATCH --output=$(log_dir)/elx_$(dir).txt
@@ -167,14 +182,14 @@ function write_sbatch_graph(edges, param_path::Dict, param::Dict, get_basename::
                 #SBATCH --time=$(duration_str)
                 #SBATCH --mem=$(mem)G
                 #SBATCH --array=1-$(modified_array_size)\n", "    " => "")
-                if email != ""
+                if email !== nothing
                     array_str *= "#SBATCH --mail-user=$(email)
                     #SBATCH --mail-type=END\n"
                 end
                 script_list_file = joinpath(cmd_dir_remote, "$(job_name)_$(count).txt")
                 array_str *= "$(run_elx_command) $(script_list_file) \$SLURM_ARRAY_TASK_ID\n"
                 write_txt(joinpath(cmd_dir_local, "$(job_name)_$(count).txt"), reduce((x,y)->x*"\n"*y, edges_in_arr))
-                write_txt(joinpath(cmd_dir_local_array, "$(job_name)_$(count).sh"), array_str)
+                write_txt(joinpath(cmd_dir_array_local, "$(job_name)_$(count).sh"), array_str)
                 count += 1
                 edges_in_arr = []
             end
@@ -188,22 +203,22 @@ function write_sbatch_graph(edges, param_path::Dict, param::Dict, get_basename::
         # Euler registration
         if use_euler
             script_str *= "python $(head_rotate_path)"*
-                " "*joinpath(MHD_dir_remote, get_basename(fixed_final, fixed_channel)*".mhd")*
-                " "*joinpath(MHD_dir_remote_moving, get_basename_moving(moving_final, moving_channel)*".mhd")*
+                " "*joinpath(MHD_dir_remote, get_basename(edge[2], fixed_channel)*".mhd")*
+                " "*joinpath(MHD_dir_remote_moving, get_basename_moving(edge[1], moving_channel)*".mhd")*
                 " "*joinpath(reg_dir_remote, dir, "$(dir)_euler.txt")*
                 " $(head_pos[edge[2]][1]),$(head_pos[edge[2]][2])"*
-                " $(head_pos_moving[edge[1]][1]),$(head_pos_moving[edge[1]][2]) > $(joinpath(data_dir_remote, reg_dir, dir, euler_logfile))\n"
+                " $(head_pos_moving[edge[1]][1]),$(head_pos_moving[edge[1]][2]) > $(joinpath(reg_dir_remote, dir, euler_logfile))\n"
         end
         
         # elastix image and output parameters
         script_str *= elastix_path*
-            " -f "*joinpath(MHD_dir_remote, get_basename(fixed_final, fixed_channel)*".mhd")*
-            " -m "*joinpath(MHD_dir_remote_moving, get_basename_moving(moving_final, moving_channel)*".mhd")*
+            " -f "*joinpath(MHD_dir_remote, get_basename(edge[2], fixed_channel)*".mhd")*
+            " -m "*joinpath(MHD_dir_remote_moving, get_basename_moving(edge[1], moving_channel)*".mhd")*
             " -out "*joinpath(reg_dir_remote, dir)
         # mask parameters
-        if mask_dir != ""
-            script_str *= " -fMask "*joinpath(mask_dir_remote, get_basename(fixed_final, fixed_channel)*".mhd")*
-            " -mMask "*joinpath(mask_dir_remote_moving, get_basename_moving(moving_final, moving_channel)*".mhd")
+        if mask_dir_local !== nothing
+            script_str *= " -fMask "*joinpath(mask_dir_remote, get_basename(edge[2], fixed_channel)*".mhd")*
+            " -mMask "*joinpath(mask_dir_remote_moving, get_basename_moving(edge[1], moving_channel)*".mhd")
         end
         # initial condition parameters
         if use_euler
@@ -231,12 +246,12 @@ function write_sbatch_graph(edges, param_path::Dict, param::Dict, get_basename::
     # sync all data to the server
     if clear_cmd_dir
         run(Cmd(["rsync", "-r", "--delete", cmd_dir_local*"/", "$(user)@$(server):"*cmd_dir_remote]))
-        if cmd_dir_array !== nothing
+        if cmd_dir_array_local !== nothing
             run(Cmd(["rsync", "-r", "--delete", cmd_dir_array_local*"/", "$(user)@$(server):"*cmd_dir_array_remote]))
         end
     else
         run(Cmd(["rsync", "-r", cmd_dir_local*"/", "$(user)@$(server):"*cmd_dir_remote]))
-        if cmd_dir_array !== nothing
+        if cmd_dir_array_local !== nothing
             run(Cmd(["rsync", "-r", cmd_dir_array_local*"/", "$(user)@$(server):"*cmd_dir_array_remote]))
         end
     end
@@ -244,13 +259,14 @@ function write_sbatch_graph(edges, param_path::Dict, param::Dict, get_basename::
     if data_dir_local_moving != data_dir_local
         run(Cmd(["rsync", "-r", "--delete", MHD_dir_local_moving*"/", "$(user)@$(server):"*MHD_dir_remote_moving]))
     end
-    if mask_dir != ""
+    if mask_dir_local !== nothing
         run(Cmd(["rsync", "-r", "--delete", mask_dir_local*"/", "$(user)@$(server):"*mask_dir_remote]))
         if data_dir_local_moving != data_dir_local
             run(Cmd(["rsync", "-r", "--delete", mask_dir_local_moving*"/", "$(user)@$(server):"*mask_dir_remote_moving]))
         end
     end
 end
+
 
 
 """
@@ -270,7 +286,7 @@ function run_elastix_openmind(param_path::Dict, param::Dict)
     temp_dir = param_path["path_om_tmp"]
     temp_file = joinpath(temp_dir, "elx_commands.txt")
     all_temp_files = joinpath(temp_dir, "*")
-    all_script_files = joinpath(param_path["path_om_data"], "*")
+    all_script_files = joinpath(param_path["path_dir_cmd"], "*")
     user = param["user"]
     server = param["server"]
     partition = param["partition"]
