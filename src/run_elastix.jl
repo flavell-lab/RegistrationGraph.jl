@@ -41,7 +41,7 @@ WARNING: This program can permanently delete data if run with incorrect argument
 - `data_dir_remote_moving::String`: If set, the directory of the moving data (if different from that of the fixed data)
 - `img_prefix_moving::String`: If set, the image prefix of the moving data (if different from that of the fixed data)
 """
-function write_sbatch_graph(edges, param_path::Dict, param::Dict, get_basename::Function;
+function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Dict, param::Dict;
         clear_cmd_dir::Bool=true,
         cpu_per_task_key::String="cpu_per_task", 
         memory_key::String="memory", 
@@ -51,65 +51,48 @@ function write_sbatch_graph(edges, param_path::Dict, param::Dict, get_basename::
         moving_channel_key::String="ch_marker",
         data_dir_fixed_key::String="path_root_process",
         data_dir_moving_key::String="path_root_process",
-        head_dir_fixed_key::String="path_head_pos",
-        head_dir_moving_key::String="path_head_pos",
+        head_dir_key::String="path_head_pos",
         data_dir_remote_fixed_key::String="path_om_data",
         data_dir_remote_moving_key::String="path_om_data",
-        MHD_dir_fixed_key::String="path_dir_mhd_filt",
-        MHD_dir_moving_key::String="path_dir_mhd_filt",
-        mask_dir_fixed_key::String="path_dir_mask",
-        mask_dir_moving_key::String="path_dir_mask",
-        reg_dir_fixed_key::String="path_dir_reg",
-        reg_dir_moving_key::String="path_dir_reg",
+        MHD_dir_key::String="path_dir_mhd_filt",
+        MHD_om_dir_key::String="path_om_mhd_filt",
+        mask_dir_key::String="path_dir_mask",
+        mask_om_dir_key::String="path_om_mask",
+        reg_dir_key::String="path_dir_reg",
+        reg_om_dir_key::String="path_dir_reg",
         path_head_rotate_key::String="path_head_rotate",
-        parameter_files_key::String="parameter_files",
-        get_basename_moving::Union{Function,Nothing}=nothing)
+        parameter_files_key::String="parameter_files")
 
-    data_dir_local = param_path[data_dir_fixed_key]
-    data_dir_local_moving = param_path[data_dir_moving_key]
-    data_dir_remote = param_path[data_dir_remote_fixed_key]
-    data_dir_remote_moving = param_path[data_dir_remote_moving_key]
-    MHD_dir_local = param_path[MHD_dir_fixed_key]
-    MHD_dir_local_moving = param_path[MHD_dir_moving_key]
-    MHD_dir_remote = replace(MHD_dir_local, data_dir_local => data_dir_remote)
-    MHD_dir_remote_moving = replace(MHD_dir_local_moving, data_dir_local_moving => data_dir_remote_moving)
-    mask_dir_local = param_path[mask_dir_fixed_key]
-    mask_dir_local_moving = param_path[mask_dir_moving_key]
-    if mask_dir_local !== nothing
-        mask_dir_remote = replace(mask_dir_local, data_dir_local => data_dir_remote)
-    else
-        mask_dir_remote = nothing
-    end
-    if mask_dir_local_moving !== nothing
-        mask_dir_remote_moving = replace(mask_dir_local_moving, data_dir_local => data_dir_remote_moving)
-    else
-        mask_dir_remote_moving = nothing
-    end
-    reg_dir_local = param_path[reg_dir_fixed_key]
-    reg_dir_local_moving = param_path[reg_dir_moving_key]
-    reg_dir_remote = replace(reg_dir_local, data_dir_local => data_dir_remote)
-    reg_dir_remote_moving = replace(reg_dir_local_moving, data_dir_local => data_dir_remote_moving)
-    head_dir = param_path[head_dir_fixed_key]
-    head_dir_moving = param_path[head_dir_moving_key]
+    data_dir_remote = param_path_fixed["path_om_data"]
+    data_dir_remote_moving = param_path_moving["path_om_data"]
+    MHD_dir_local = param_path_fixed[MHD_dir_key]
+    MHD_dir_local_moving = param_path_moving[MHD_dir_key]
+    MHD_dir_remote = param_path_fixed[MHD_om_dir_key]
+    MHD_dir_remote_moving = param_path_moving[MHD_om_dir_key]
+    mask_dir_local = param_path_fixed[mask_dir_key]
+    mask_dir_local_moving = param_path_moving[mask_dir_key]
+    mask_dir_remote = param_path_fixed[mask_om_dir_key]
+    mask_dir_remote_moving = param_path_moving[mask_om_dir_key]
+    reg_dir_local = param_path_fixed[reg_dir_key]
+    reg_dir_local_moving = param_path_moving[reg_dir_key]
+    reg_dir_remote = param_path_fixed[reg_om_dir_key]
+    reg_dir_remote_moving = param_path_moving[reg_om_dir_key]
+    head_dir = param_path_fixed[head_dir_key]
+    head_dir_moving = param_path_moving[head_dir_key]
 
-    if get_basename_moving === nothing
-        get_basename_moving = get_basename
-    end
+    get_basename = param_path_fixed["get_basename"]
+    get_basename_moving = param_path_moving["get_basename"]
 
-    cmd_dir_local = param_path["path_dir_cmd"]
-    cmd_dir_remote = replace(cmd_dir_local, data_dir_local => data_dir_remote)
-    cmd_dir_array_local = param_path["path_dir_cmd_array"]
-    if cmd_dir_array_local !== nothing
-        cmd_dir_array_remote = replace(cmd_dir_array_local, data_dir_local => data_dir_remote)
-    else
-        cmd_dir_array_remote = nothing
-    end
-    head_rotate_path = param_path[path_head_rotate_key]
-    log_dir = param_path["path_dir_log"]
-    run_elx_command = param_path["path_run_elastix"]
-    elastix_path = param_path["path_elastix"]
-    parameter_files = param_path[parameter_files_key]
-    euler_logfile = param_path["name_head_rotate_logfile"]
+    cmd_dir_local = param_path_fixed["path_dir_cmd"]
+    cmd_dir_remote = param_path_fixed["path_om_cmd"]
+    cmd_dir_array_local = param_path_fixed["path_dir_cmd_array"]
+    cmd_dir_array_remote = param_path_fixed["path_om_cmd_array"]
+    head_rotate_path = param_path_fixed[path_head_rotate_key]
+    log_dir = param_path_fixed["path_dir_log"]
+    run_elx_command = param_path_fixed["path_run_elastix"]
+    elastix_path = param_path_fixed["path_elastix"]
+    parameter_files = param_path_fixed[parameter_files_key]
+    euler_logfile = param_path_fixed["name_head_rotate_logfile"]
     
     cpu_per_task = param[cpu_per_task_key]
     mem = param[memory_key]
@@ -257,12 +240,12 @@ function write_sbatch_graph(edges, param_path::Dict, param::Dict, get_basename::
         end
     end
     run(Cmd(["rsync", "-r", MHD_dir_local*"/", "$(user)@$(server):"*MHD_dir_remote]))
-    if data_dir_local_moving != data_dir_local
+    if param_path_fixed != param_path_moving
         run(Cmd(["rsync", "-r", "--delete", MHD_dir_local_moving*"/", "$(user)@$(server):"*MHD_dir_remote_moving]))
     end
     if mask_dir_local !== nothing
         run(Cmd(["rsync", "-r", "--delete", mask_dir_local*"/", "$(user)@$(server):"*mask_dir_remote]))
-        if data_dir_local_moving != data_dir_local
+        if param_path_fixed != param_path_moving
             run(Cmd(["rsync", "-r", "--delete", mask_dir_local_moving*"/", "$(user)@$(server):"*mask_dir_remote_moving]))
         end
     end
@@ -287,12 +270,11 @@ function run_elastix_openmind(param_path::Dict, param::Dict)
     temp_dir = param_path["path_om_tmp"]
     temp_file = joinpath(temp_dir, "elx_commands.txt")
     all_temp_files = joinpath(temp_dir, "*")
-    cmd_path = param_path["path_dir_cmd"]
-    if param_path["path_dir_cmd_array"] !== nothing
-        cmd_path = param_path["path_dir_cmd_array"]
+    cmd_path = param_path["path_om_cmd"]
+    if param_path["path_om_cmd_array"] !== nothing
+        cmd_path = param_path["path_om_cmd_array"]
     end
-    cmd_dir_remote = replace(cmd_path, param_path["path_root_process"] => param_path["path_om_data"])
-    all_script_files = joinpath(cmd_dir_remote, "*")
+    all_script_files = joinpath(cmd_path, "*")
     user = param["user"]
     server = param["server"]
     partition = param["partition"]
@@ -353,12 +335,12 @@ Syncs registration data from a remote compute server back to the local computer.
 - `reg_dir::String`: Path to registered data on server, relative to `data_dir_remote`. Default `Registered`
 - `server::String`: Location of the server containing elastix. Default `openmind7.mit.edu`
 """
-function sync_registered_data(param_path::Dict, param::Dict; reg_dir_key="path_dir_reg")
+function sync_registered_data(param_path::Dict, param::Dict; reg_dir_key="path_dir_reg", reg_om_key="path_om_reg")
     reg_dir_local = param_path[reg_dir_key]
     create_dir(reg_dir_local)
     user = param["user"]
     server = param["server"]
-    reg_dir_remote = replace(reg_dir_local, param_path["path_root_process"] => param_path["path_om_data"])
+    reg_dir_remote = param_path[reg_om_key]
     run(Cmd(["rsync", "-r", "$(user)@$(server):"*reg_dir_remote*"/", reg_dir_local]))
 end
 
