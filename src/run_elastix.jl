@@ -353,7 +353,7 @@ Syncs registration data from a remote compute server back to the local computer.
 - `reg_dir::String`: Path to registered data on server, relative to `data_dir_remote`. Default `Registered`
 - `server::String`: Location of the server containing elastix. Default `openmind7.mit.edu`
 """
-function sync_registered_data(param_path::Dict, param::Dict; reg_dir_key=path_dir_reg)
+function sync_registered_data(param_path::Dict, param::Dict; reg_dir_key="path_dir_reg")
     reg_dir_local = param_path[reg_dir_key]
     create_dir(reg_dir_local)
     user = param["user"]
