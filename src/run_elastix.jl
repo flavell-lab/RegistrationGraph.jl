@@ -88,7 +88,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     cmd_dir_array_local = param_path_fixed["path_dir_cmd_array"]
     cmd_dir_array_remote = param_path_fixed["path_om_cmd_array"]
     head_rotate_path = param_path_fixed[path_head_rotate_key]
-    log_dir = param_path_fixed["path_dir_log"]
+    log_dir = param_path_fixed["path_om_log"]
     run_elx_command = param_path_fixed["path_run_elastix"]
     elastix_path = param_path_fixed["path_elastix"]
     parameter_files = param_path_fixed[parameter_files_key]
