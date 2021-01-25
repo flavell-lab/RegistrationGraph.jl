@@ -49,22 +49,19 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         job_name_key::String="job_name",
         fixed_channel_key::String="ch_marker",
         moving_channel_key::String="ch_marker",
-        data_dir_fixed_key::String="path_root_process",
-        data_dir_moving_key::String="path_root_process",
         head_dir_key::String="path_head_pos",
-        data_dir_remote_fixed_key::String="path_om_data",
-        data_dir_remote_moving_key::String="path_om_data",
+        om_data_key::String="path_om_data",
         MHD_dir_key::String="path_dir_mhd_filt",
         MHD_om_dir_key::String="path_om_mhd_filt",
         mask_dir_key::String="path_dir_mask",
         mask_om_dir_key::String="path_om_mask",
         reg_dir_key::String="path_dir_reg",
-        reg_om_dir_key::String="path_dir_reg",
+        reg_om_dir_key::String="path_om_reg",
         path_head_rotate_key::String="path_head_rotate",
         parameter_files_key::String="parameter_files")
 
-    data_dir_remote = param_path_fixed["path_om_data"]
-    data_dir_remote_moving = param_path_moving["path_om_data"]
+    data_dir_remote = param_path_fixed[om_data_key]
+    data_dir_remote_moving = param_path_moving[om_data_key]
     MHD_dir_local = param_path_fixed[MHD_dir_key]
     MHD_dir_local_moving = param_path_moving[MHD_dir_key]
     MHD_dir_remote = param_path_fixed[MHD_om_dir_key]
