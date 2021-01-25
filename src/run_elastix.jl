@@ -354,10 +354,10 @@ Returns a dictionary of errors per problem and resolution.
 # Optional keyword arguments
 - `reg_dir::String`: Directory of registered data. Default `Registered`.
 """
-function fix_param_paths(problems, param_path::Dict, param::Dict; reg_dir_key::String="path_dir_reg")
+function fix_param_paths(problems, param_path::Dict, param::Dict; reg_dir_key::String="path_dir_reg", n_resolution_key::String="reg_n_resolution")
     errors = Dict()
     reg_dir_local = param_path[reg_dir_key]
-    resolutions = param["reg_n_resolution"]
+    resolutions = param[n_resolution_key]
     rootpath = param_path["path_root_process"]
     @showprogress for problem in problems
         errors[problem] = Dict()
