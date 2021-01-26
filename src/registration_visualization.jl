@@ -271,7 +271,7 @@ The fixed image will be red and the moving image will be green, so yellow indica
 function make_diff_pngs_base(param_path::Dict, get_basename::Function, fixed::Integer, moving::Integer;
         proj_dim::Integer=3, regdir_key::String="path_dir_reg", mhd_key="path_dir_mhd_filt", moving_ch::Integer=2, fixed_ch::Integer=2,
         contrast_f::Real=1, contrast_m::Real=1, swap_colors::Bool=false, png_name="noreg.png")
-    moving_img_path = joinpath(param_path[regdir_key], string(moving) * "to" * string(fixed), get_basename(moving, moving_ch)*".mhd")
+    moving_img_path = joinpath(param_path[mhd_key], get_basename(moving, moving_ch)*".mhd")
     fixed_img_path = joinpath(param_path[mhd_key], get_basename(fixed, fixed_ch)*".mhd")
     png_path = joinpath(param_path[regdir_key], string(moving) * "to" * string(fixed), png_name)
     fixed_stack = dropdims(maximum(read_img(MHD(fixed_img_path)), dims=proj_dim), dims=proj_dim)
