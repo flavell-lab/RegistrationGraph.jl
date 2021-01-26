@@ -32,7 +32,7 @@ function make_quality_dict(problems, evaluation_functions::Dict, selection_metri
             for metric in func_names
                 func = evaluation_functions[metric]
                 try
-                    if mask_dir == ""
+                    if isnothing(mask_dir)
                         result = func(moving, fixed, resolution)
                     else
                         result = func(moving, fixed, resolution, mask_dir)
