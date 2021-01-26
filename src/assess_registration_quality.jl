@@ -16,7 +16,7 @@ It is assumed that smaller values are better for the metrics.
 - `mask_dir::String`: directory to a mask file. Statistics will not be computed on regions outside the mask.
     If left blank, no mask will be used or passed to the evaluation functions.
 """
-function make_quality_dict(problems, evaluation_functions::Dict, selection_metric::String, resolutions; mask_dir::String="")
+function make_quality_dict(problems, evaluation_functions::Dict, selection_metric::String, resolutions; mask_dir::Union{String,Nothing}=nothing)
     dict = Dict()
     best_reg = Dict()
     errors = Dict()
@@ -54,6 +54,6 @@ function make_quality_dict(problems, evaluation_functions::Dict, selection_metri
 end
 
 
-function make_quality_dict(param::Dict, problems)
-    return make_quality_dict(problems, param["evaluation_functions"], param["quality_metric"], param["good_registration_resolutions"])
+function make_quality_dict(param_path::Dict, param::Dict, problems, evaluation_functions)
+    return make_quality_dict(problems, evaluation_functions, param["quality_metric"], param["good_registration_resolutions"], mask_dir=param_path["path_dir_mask"])
 end
