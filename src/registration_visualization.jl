@@ -212,8 +212,8 @@ The fixed image will be red and the moving image will be green, so yellow indica
 - `swap_colors::Bool`: If set to `true`, fixed image will be green and moving image will be red.
 """
 function make_diff_pngs(param_path::Dict, param::Dict, get_basename::Function, fixed::Integer, moving::Integer;
-        proj_dim::Integer=3, fixed_ch_key::String="ch_marker", regdir_key::String="path_dir_reg", mhd_key="path_dir_mhd_filt", result::String="", 
-        contrast_f::Real=1, contrast_m::Real=1, swap_colors::Bool=false)
+        proj_dim::Integer=3, fixed_ch_key::String="ch_marker", regdir_key::String="path_dir_reg", mhd_key="path_dir_mhd_filt",
+        result::Union{Nothing,String}=nothing, contrast_f::Real=1, contrast_m::Real=1, swap_colors::Bool=false)
     fixed_ch = param[fixed_ch_key]
     reg_path = joinpath(param_path[regdir_key], string(moving) * "to" * string(fixed))
     fixed_img_path = joinpath(param_path[mhd_key], get_basename(fixed, fixed_ch)*".mhd")
@@ -222,7 +222,7 @@ function make_diff_pngs(param_path::Dict, param::Dict, get_basename::Function, f
     error = false
     for i=1:length(iters)
         for j=1:iters[i]
-            if result == ""               
+            if isnothing(result)    
                 img_path = reg_path * "/result." * string(i-1) * ".R" * string(j-1)
             else
                 img_path = reg_path * "/" * result
