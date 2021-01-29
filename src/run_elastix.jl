@@ -108,6 +108,9 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     if clear_cmd_dir
         println("Resetting $(cmd_dir_local)...")
         rm(cmd_dir_local, recursive=true, force=true)
+        if !isnothing(cmd_dir_array_local)
+            rm(cmd_dir_array_local, recursive=true, force=true)
+        end
     end
     create_dir(cmd_dir_local)
     create_dir(cmd_dir_array_local)
