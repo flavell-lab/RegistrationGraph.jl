@@ -160,11 +160,23 @@ end
  
 """
 Outputs `graph::SimpleWeightedDiGraph` to an output file `outfile` containing a list of edges in `graph`.
+Can set `max_fixed_t::Int` parameter if a dataset-alignment registration is being done.
 """
-function output_graph(subgraph::SimpleWeightedDiGraph, outfile::String)
+function output_graph(subgraph::SimpleWeightedDiGraph, outfile::String; max_fixed_t::Int=0)
     open(outfile, "w") do f
         for edge in edges(subgraph)
-            write(f, string(Int16(src(edge)))*" "*string(Int16(dst(edge)))*"\n")
+            e1 = Int16(src(edge))
+            e2 = Int16(dst(edge))
+            if e1 > max_fixed_t && e2 <= max_fixed_t
+                e1 -= max_fixed_t
+            end
+            # other dataset is always moving
+            if e2 > max_fixed_t && e1 <= max_fixed_t
+                e3 = e2 - max_fixed_t
+                e2 = e1
+                e1 = e3
+            end
+            write(f, string(e1)*" "*string(e2)*"\n")
         end
     end
 end
