@@ -71,9 +71,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     mask_dir_remote = param_path_fixed[mask_om_dir_key]
     mask_dir_remote_moving = param_path_moving[mask_om_dir_key]
     reg_dir_local = param_path_fixed[reg_dir_key]
-    reg_dir_local_moving = param_path_moving[reg_dir_key]
     reg_dir_remote = param_path_fixed[reg_om_dir_key]
-    reg_dir_remote_moving = param_path_moving[reg_om_dir_key]
     head_dir = param_path_fixed[head_dir_key]
     head_dir_moving = param_path_moving[head_dir_key]
 
