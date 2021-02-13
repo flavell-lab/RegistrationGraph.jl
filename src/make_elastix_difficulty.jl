@@ -2,7 +2,7 @@
 Generates an elastix difficulty file based on the given heuristic.
 
 # Arguments
-
+- `path_elastix_difficulty::String`: output file
 - `t_range`: list or range of time points to compute the difficulty
 - `heuristic`: a heuristic function that evaluates "distance" betwen two frames.
     The function will be given `t1`, and `t2` as input, so be sure its
