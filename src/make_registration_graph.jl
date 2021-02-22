@@ -1,41 +1,3 @@
-""" 
-Computes the minimum path between a node and all other nodes using Dijkstra's algorithm.
-# Arguments
-- `graph::SimpleWeightedGraph`: a graph represented as a weighted adjacency matrix
-- `node::Integer`: a node in the graph, represented as an index into `adj`
-# Returns:
-- `dist::Dict`: a dictionary of distances from each vertex to the `node` vertex
-- `paths::Dict`: a dictionary of shortest paths from each vertex to the `node` vertex
-"""
-function shortest_paths(graph::SimpleWeightedGraph, node::Integer)
-    dist = Dict()
-    paths = Dict()
-    unvisited = collect(1:size(adj)[1])
-    # initialize distances
-    for i=1:size(adj)[1]
-        dist[i] = Inf
-        paths[i] = []
-    end
-    dist[node] = 0
-    paths[node] = [node]
-    while length(unvisited) > 0
-        min_d, idx = findmin([dist[i] for i in unvisited])
-        if min_d == Inf
-            break
-        end
-        current = unvisited[idx]
-        for i in unvisited
-            new_dist = dist[current] + adj[current, i]
-            if new_dist < dist[i]
-                dist[i] = new_dist
-                paths[i] = [paths[current]; i]
-            end
-        end
-        unvisited = filter(x->(x!=current), unvisited)
-    end
-    return (dist, paths)
-end
-
 """
 Converts a `graph::SimpleWeightedGraph` into an adjacency dictionary
 node => Dict({neighbor1 => weight1, neighbor2=> weight2, ...})
@@ -112,7 +74,7 @@ function make_voting_subgraph(graph::SimpleWeightedGraph, degree::Integer)
     end
     unconnected = find_unconnected(added_edges)
     if length(unconnected) > 0
-        println("WARNING: Disconnected graph")
+        @warn "Disconnected graph"
     end
     return (subgraph, unconnected)
 end
@@ -162,7 +124,7 @@ split especially difficult registration problems into many steps.
 If this results in too many failed registrations, try increasnig the difficulty_importance parameter;
 conversely, if there is too much error accumulation over long chains of registrations, try decreasing it.
 # Arguments
-- `elastix_difficulty::String`: a text file containing a list of frames and an adjacency matrix.
+- `elx_difficulty::String`: a path to a text file containing a list of frames and an adjacency matrix.
 - `func` (optional): a function to apply to each element of the adjacency matrix
 - `difficulty_importance`: if `func` is not provided, it will be set to `x->x^(1+difficulty_importance)`
 Returns a graph `graph::SimpleWeightedGraph` storing the adjacency matrix.
@@ -198,11 +160,23 @@ end
  
 """
 Outputs `graph::SimpleWeightedDiGraph` to an output file `outfile` containing a list of edges in `graph`.
+Can set `max_fixed_t::Int` parameter if a dataset-alignment registration is being done.
 """
-function output_graph(subgraph::SimpleWeightedDiGraph, outfile::String)
+function output_graph(subgraph::SimpleWeightedDiGraph, outfile::String; max_fixed_t::Int=0)
     open(outfile, "w") do f
         for edge in edges(subgraph)
-            write(f, string(Int16(src(edge)))*" "*string(Int16(dst(edge)))*"\n")
+            e1 = Int16(src(edge))
+            e2 = Int16(dst(edge))
+            if e1 > max_fixed_t && e2 <= max_fixed_t
+                e1 -= max_fixed_t
+            end
+            # other dataset is always moving
+            if e2 > max_fixed_t && e1 <= max_fixed_t
+                e3 = e2 - max_fixed_t
+                e2 = e1
+                e1 = e3
+            end
+            write(f, string(e1)*" "*string(e2)*"\n")
         end
     end
 end
@@ -227,8 +201,7 @@ Returns a new graph where difficulties of registration problems are scaled by th
 
 # Arguments
 
-- `rootpath::String`: working directory of registration quality data
-- `reg_quality_arr::Array{String,1}` is an array of filenames containing registration quality data.
+- `reg_quality_arr::Array{String,1}` is an array of paths to files containing registration quality data
 - `graph::SimpleWeightedGraph` is the difficulty graph to be updated
 - `metric::String` is which quality metric to use to update the graph
 
@@ -236,11 +209,11 @@ Returns a new graph where difficulties of registration problems are scaled by th
 
 - `metric_tfm`: Function to apply to each metric value. Default identity.
 """
-function update_graph(rootpath::String, reg_quality_arr::Array{String,1}, graph::SimpleWeightedGraph, metric::String; metric_tfm=identity)
+function update_graph(reg_quality_arr::Array{String,1}, graph::SimpleWeightedGraph, metric::String; metric_tfm=identity)
     new_graph = copy(graph)
     d = to_dict(graph)
     for reg_quality in reg_quality_arr
-        open(joinpath(rootpath, reg_quality), "r") do f
+        open(reg_quality, "r") do f
             first = true
             idx = 0
             for line in eachline(f)
@@ -263,15 +236,13 @@ end
 """
 Removes previous registrations from the subgraph.
 # Arguments:
-- `rootpath::String`: working directory of registration quality data
-- `previous_problems::Array{String, 1}`: files containing registration problems
+- `previous_problems`: list of registration problems
 - `subgraph::SimpleWeightedDiGraph`: current subgraph
 """
-function remove_previous_registrations(rootpath::String, previous_problems::Array{String,1}, subgraph::SimpleWeightedDiGraph)
-    previous = load_registration_problems(rootpath, previous_problems)
+function remove_previous_registrations(previous_problems, subgraph::SimpleWeightedDiGraph)
     subgraph_purged = SimpleWeightedDiGraph(nv(subgraph))
     for edge in edges(subgraph)
-        if !((src(edge), dst(edge)) in previous)
+        if !((src(edge), dst(edge)) in previous_problems)
             add_edge!(subgraph_purged, src(edge), dst(edge), weight(edge))
         end
     end
