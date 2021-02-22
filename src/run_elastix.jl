@@ -324,3 +324,47 @@ function fix_param_paths(problems, rootpath::String, remote_data_path::String, r
     end
     return errors
 end
+
+"""
+Averages together registrations. All regstration parameters (including image size) must be the same except for the `TransformParameters`.
+
+# Arguments
+
+ - `t_range`: Time points to register
+ - `param_path::Dict`: Dictionary containing paths to parameter files
+ - `reg_dir_key::String`: Key in `param_path` containing registration directory
+ - `transform_key::String`: Key in `param_path` contaning transform file names
+ - `transform_avg_key::String`: Key in `param_path` contaning averaged transform file names (to be created)
+ - `key_param_key::String`: Key in `param_path` containing the `TransformParameters` key.
+ - `avg_fn::Function`: Function used to average together registrations. Default `median`.
+"""
+function average_am_registrations(t_range, param_path::Dict;
+        reg_dir_key::String="path_dir_reg_activity_marker", transform_key::String="name_transform_activity_marker",
+        transform_avg_key::String="name_transform_activity_marker_avg", key_param_key::String="key_transform_parameters", avg_fn::Function=median)
+    euler_params = Dict()
+    errors = Dict()
+    @showprogress for t in t_range
+        try
+            euler_params[t] = read_parameter_file(joinpath(param_path[reg_dir_key], "$(t)to$(t)", param_path[transform_key]), param_path[key_param_key], Float64)
+        catch e
+            errors[t] = e
+        end
+    end
+
+    min_t = minimum(keys(euler_params))
+    params_avg = [avg_fn([euler_params[t][i] for t in keys(euler_params)]) for i in 1:length(euler_params[min_t])]
+    params_avg_str = replace(string(params_avg), r"\[|\,|\]|"=>"")
+
+    path_min_t_transform_avg = joinpath(param_path[reg_dir_key], "$(min_t)to$(min_t)", param_path[transform_avg_key])
+
+    modify_parameter_file(joinpath(param_path[reg_dir_key], "$(min_t)to$(min_t)", param_path[transform_key]),
+        path_min_t_transform_avg, Dict(param_path["key_transform_parameters"] => params_avg_str); is_universal=false)
+    @showprogress for t in t_range
+        if t == min_t
+            continue
+        end
+        create_dir(joinpath(param_path[reg_dir_key], "$(t)to$(t)"))
+        cp(path_min_t_transform_avg, joinpath(param_path[reg_dir_key], "$(t)to$(t)", param_path[transform_avg_key]), force=true)
+    end
+    return euler_params, params_avg, errors
+end

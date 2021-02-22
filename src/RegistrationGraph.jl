@@ -24,6 +24,7 @@ export
     make_voting_subgraph,
     sync_registered_data,
     fix_param_paths,
+    average_am_registrations,
     plot_centroid_map,
     view_roi_regmap,
     gen_regmap_rgb,
