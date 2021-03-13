@@ -20,48 +20,57 @@ jobs:
         with:
           repository: flavell-lab/FlavellBase.jl.git
           path: ./FlavellBase.jl
+          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
           repository: flavell-lab/GPUFilter.jl.git
           path: ./GPUFilter.jl
+          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
           repository: flavell-lab/MHDIO.jl.git
           path: ./MHDIO.jl
+          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
           repository: flavell-lab/FFTRegGPU.jl.git
           path: ./FlavellBase.jl
+          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
           repository: flavell-lab/ImageDataIO.jl.git
           path: ./ImageDataIO.jl
+          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
           repository: flavell-lab/WormCurveFinder.jl.git
           path: ./WormCurveFinder.jl
+          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
           repository: flavell-lab/Clustering.jl.git
           path: ./Clustering.jl
+          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
           repository: flavell-lab/WormFeatureDetector.jl.git
           path: ./WormFeatureDetector.jl
+          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
           repository: flavell-lab/SegmentationTools.jl.git
           path: ./SegmentationTools.jl
+          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
           repository: flavell-lab/ND2Process.jl.git
           path: ./ND2Process.jl
+          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
           repository: flavell-lab/SLURMManager.jl.git
           path: ./SLURMManager.jl
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
+          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - name: Install package
         run: julia --project=docs/ -e 'using Pkg;  Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: Build and deploy
