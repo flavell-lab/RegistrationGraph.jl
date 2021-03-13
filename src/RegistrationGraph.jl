@@ -25,7 +25,7 @@ export
     sync_registered_data,
     fix_param_paths,
     average_am_registrations,
-    plot_centroid_map,
+    plot_centroid_match,
     view_roi_regmap,
     gen_regmap_rgb,
     visualize_roi_predictions,
