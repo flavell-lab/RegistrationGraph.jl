@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@master
         with:
           repository: flavell-lab/FFTRegGPU.jl
-          path: ./FlavellBase.jl
+          path: ./FFTRegGPU.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
@@ -72,7 +72,18 @@ jobs:
           path: ./SLURMManager.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - name: Install package
-        run: julia --project=docs/ -e 'using Pkg;  Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path="./FlavellBase.jl"));
+          Pkg.develop(PackageSpec(path="./GPUFilter.jl"));
+          Pkg.develop(PackageSpec(path="./MHDIO.jl")); 
+          Pkg.develop(PackageSpec(path="./FFTRegGPU.jl")); 
+          Pkg.develop(PackageSpec(path="./ImageDataIO.jl")); 
+          Pkg.develop(PackageSpec(path="./WormCurveFinder.jl")); 
+          Pkg.develop(PackageSpec(path="./Clustering.jl")); 
+          Pkg.develop(PackageSpec(path="./WormFeatureDetector.jl")); 
+          Pkg.develop(PackageSpec(path="./SegmentationTools.jl")); 
+          Pkg.develop(PackageSpec(path="./ND2Process.jl")); 
+          Pkg.develop(PackageSpec(path="./SLURMManager.jl")); 
+          Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: Build and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
