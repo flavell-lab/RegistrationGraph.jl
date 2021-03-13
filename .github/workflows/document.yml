@@ -17,7 +17,19 @@ jobs:
         with:
           version: '1.5.3'
       - name: Install dependencies
-        run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        uses: actions/checkout@master
+        with:
+          name: flavell-lab/FlavellBase.jl.git
+          name: flavell-lab/GPUFilter.jl.git
+          name: flavell-lab/MHDIO.jl.git
+          name: flavell-lab/ImageDataIO.jl.git
+          name: flavell-lab/WormCurveFinder.jl.git
+          name: flavell-lab/SegmentationTools.jl.git
+          name: flavell-lab/ND2Process.jl.git
+          name: flavell-lab/SLURMManager.jl.git
+        run: julia --project=docs/ -e 'using Pkg;  Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
       - name: Build and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
