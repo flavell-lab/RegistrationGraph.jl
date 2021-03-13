@@ -19,14 +19,14 @@ jobs:
       - name: Install dependencies
         uses: actions/checkout@master
         with:
-          name: flavell-lab/FlavellBase.jl.git
-          name: flavell-lab/GPUFilter.jl.git
-          name: flavell-lab/MHDIO.jl.git
-          name: flavell-lab/ImageDataIO.jl.git
-          name: flavell-lab/WormCurveFinder.jl.git
-          name: flavell-lab/SegmentationTools.jl.git
-          name: flavell-lab/ND2Process.jl.git
-          name: flavell-lab/SLURMManager.jl.git
+          repository: flavell-lab/FlavellBase.jl.git
+          repository: flavell-lab/GPUFilter.jl.git
+          repository: flavell-lab/MHDIO.jl.git
+          repository: flavell-lab/ImageDataIO.jl.git
+          repository: flavell-lab/WormCurveFinder.jl.git
+          repository: flavell-lab/SegmentationTools.jl.git
+          repository: flavell-lab/ND2Process.jl.git
+          repository: flavell-lab/SLURMManager.jl.git
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
       - name: Install package
