@@ -27,7 +27,10 @@ jobs:
           name: flavell-lab/SegmentationTools.jl.git
           name: flavell-lab/ND2Process.jl.git
           name: flavell-lab/SLURMManager.jl.git
-        run: julia --project=docs/ -e 'using Pkg;  Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
+      - name: Install package
+          run: julia --project=docs/ -e 'using Pkg;  Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
       - name: Build and deploy
