@@ -126,7 +126,7 @@ conversely, if there is too much error accumulation over long chains of registra
 # Arguments
 - `elx_difficulty::String`: a path to a text file containing a list of frames and an adjacency matrix.
 - `func` (optional): a function to apply to each element of the adjacency matrix
-- `difficulty_importance`: if `func` is not provided, it will be set to `x->x^(1+difficulty_importance)`
+- `difficulty_importance` (optional, default 0.05): if `func` is not provided, it will be set to `x->x^(1+difficulty_importance)`
 Returns a graph `graph::SimpleWeightedGraph` storing the adjacency matrix.
 """
 function load_graph(elx_difficulty::String; func=nothing, difficulty_importance::Real=0.05)
@@ -159,7 +159,7 @@ function load_graph(elx_difficulty::String; func=nothing, difficulty_importance:
 end
  
 """
-Outputs `graph::SimpleWeightedDiGraph` to an output file `outfile` containing a list of edges in `graph`.
+Outputs `subgraph::SimpleWeightedDiGraph` to an output file `outfile` containing a list of edges in `subgraph`.
 Can set `max_fixed_t::Int` parameter if a dataset-alignment registration is being done.
 """
 function output_graph(subgraph::SimpleWeightedDiGraph, outfile::String; max_fixed_t::Int=0)

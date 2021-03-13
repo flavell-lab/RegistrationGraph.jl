@@ -3,7 +3,24 @@ Syncs data from local computer to a remote server and creates command files for 
 WARNING: This program can permanently delete data if run with incorrect arguments.
 # Arguments
 - `edges`: List of registration problems to perform
-- `data_dir_local::String`: Working directory of data on your machine.
+- `param_path_fixed::Dict`: Dictionary containing paths for the fixed images including:
+    - `get_basename`: Function that maps channel and time point to MHD filename
+    - `path_dir_cmd`: Path to elastix command directory
+    - `path_om_cmd`: Path to elastix command directory on the server
+    - `path_dir_cmd_array`: Path to elastix array command directory
+    - `path_om_cmd_array`: Path to elastix array command directory on the server
+    - `path_om_log`: Path to log file on server
+    - `path_run_elastix`: Path to script that runs elastix given command on the server
+    - `path_elastix`: Path to elastix executable on the server
+    - `name_head_rotate_logfile`: Name of head rotate log files
+- `param_path_moving::Dict`: Dictionary containing paths for the moving images including the same keys as with the fixed dictionary.
+- `param::Dict`: Dictionary containing parameters including:
+    - `email`: Email to inform user of task termination. If `nothing`, no emails will be sent
+    - `use_sbatch`: Use `sbatch`, rather than directly running code on the server. This should always be set to `true` on OpenMind
+    - `server`: Address of server to run code on
+    - `user`: Username on server
+    - `array_size`: Size of `sbatch` array to use
+
 - `data_dir_remote::String`: Working directory of data on the remote server.
 - `img_prefix::String`: image prefix not including the timestamp. It is assumed that each frame's filename 
     will be, eg, `img_prefix_t0123_ch2.mhd` for frame 123 with channel=2.
@@ -11,35 +28,26 @@ WARNING: This program can permanently delete data if run with incorrect argument
     as stored on the remote server. These parameter files are NOT assumed to be in the working directory.
 - `channel::Integer`: The channel to use for registration.
 - `user::String`: Username on the server
-## Optional Keyword Arguments
-- `MHD_dir::String`: Directory of MHD files. Default `MHD`.
-- `reg_dir::String`: Directory to place registered data. Default `Registered`.
-- `log_dir::String`: Elastix output log directory. Default `log`.
-- `head_rotate_path::String`: Directory to program to do Euler registration. Defaults to Adam Atanas's version.
-    If set to the empty string, Euler registration will not be performed.
-- `euler_logfile::String`: Filename of Euler output. Default `euler.log`
-- `head_path::String`: Path to a file containing locations of the worm's head.
-    This must be provided if Euler registration is being used.
-- `elastix_path::String`: Directory to elastix binary. Defaults to Jungsoo Kim's version.
-- `cmd_dir::String`: Directory to store elastix command files. Default `elx_commands`,
-- `cmd_dir_array::String`: Directory to store sbatch arrays that run elastix command files.
-    If set to the empty string, no arrays will be generated. Default `elx_commands_array`
-- `job_name::String`: Name of array job files, subscripted with an index. Default `elx`.
-- `array_size::Integer`: Number of commands per array. Default 499.
-- `run_elx_command::String`: Path to a bash script on OpenMind that runs a script from a line in a text file list of scripts
-- `clear_cmd_dir::Bool`: Whether to clear command directory on OpenMind before syncing. Default true.
-- `mask_dir::String`: Directory of mask files to be given to elastix. Mask files are assumed to have the same
-    filenames as the corresponding MHD files. If left empty, elastix will not use a mask.
-- `server::String`: Location of the server containing elastix. Default `openmind7.mit.edu`
-- `use_sbatch::Bool`: Whether the command files should use `sbatch`, as opposed to being direct calls to elastix. Default true.
-- `email::String`: Your email address, which the server will ping when registration finishes. If left blank, no emails will be sent.
-- `cpu_per_task::Integer`: Number of CPUs to use for each elastix instance. Default 16.
-- `mem::Integer`: Amount of memory in GB to use for each elastix instance. Default 1.
-- `duration::Time`: Maximum amount of time elastix can run before being killed. Default 1 hour.
-- `fixed_channel::Integer`: If set, the channel of the fixed frame will be this instead of `channel`.
-- `data_dir_local_moving::String`: If set, the directory of the moving data (if different from that of the fixed data)
-- `data_dir_remote_moving::String`: If set, the directory of the moving data (if different from that of the fixed data)
-- `img_prefix_moving::String`: If set, the image prefix of the moving data (if different from that of the fixed data)
+
+## Optional keyword arguments
+
+ - `clear_cmd_dir::Bool`: Whether to clear the elastix command directory, useful if you are re-running registrations
+ - `cpu_per_task_key::String`: Key in `param` to CPU cores per elastix task. Default `cpu_per_task`
+ - `memory_key::String`: Key in `param` to memory per elastix task. Default `memory`
+ - `duration_key::String`: Key in `param` to the duration of each elastix task. Default `duration`
+ - `job_name_key::String`: Key in `param` to the name of the elastix tasks. Default `job_name`
+ - `fixed_channel_key::String`: Key in `param` to the fixed channel. Default `ch_marker`
+ - `moving_channel_key::String`: Key in `param` to the moving channel. Default `ch_marker`
+ - `head_dir_key::String`: Key in `param_path_*` to the head position of the worm. Default `path_head_pos`
+ - `om_data_key::String`: Key in `param_path_*` to the path to sync the data on the server. Default `path_om_data`
+ - `MHD_dir_key::String`: Key in `param_path_*` to the path to the MHD files. Default `path_dir_mhd_filt`
+ - `MHD_om_dir_key::String`: Key in `param_path_*` to the path to the MHD files on the server. Default `path_om_mhd_filt`
+ - `mask_dir_key::String`: Key in `param_path_*` to the mask path. Default `path_dir_mask`
+ - `mask_om_dir_key::String`: Key in `param_path_*` to the mask path on the server. Default `path_om_mask`
+ - `reg_dir_key::String`: Key in `param_path_*` to the registration output directory. Default `path_dir_reg`
+ - `reg_om_dir_key::String`: Key in `param_path_*` to the registration output directory on the server. `path_om_reg`
+ - `path_head_rotate_key::String`: Key in `param_path_fixed` to the path on the server to the head rotation python file. Default `path_head_rotate`
+ - `parameter_files_key::String`: Key in `param_path_fixed` to the path on the server to the elastix parameter files. Default `parameter_files`
 """
 function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Dict, param::Dict;
         clear_cmd_dir::Bool=true,

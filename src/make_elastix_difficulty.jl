@@ -29,6 +29,16 @@ function generate_elastix_difficulty(path_elastix_difficulty::String, t_range, h
     return difficulty
 end
 
+"""
+Generates an elastix difficulty file based on the given heuristic.
+
+# Arguments
+- `param_path::Dict`: Dictionary of paths containing `path_elastix_difficulty` key to the path of the elastix difficulty output file
+- `t_range`: list or range of time points to compute the difficulty
+- `heuristic`: a heuristic function that evaluates "distance" betwen two frames.
+    The function will be given `t1`, and `t2` as input, so be sure its
+    other parameters have been initialized correctly. It is assumed that the function outputs floating-point values.
+"""
 function generate_elastix_difficulty(param_path::Dict, t_range, heuristic::Function)
     path_elastix_difficulty = param_path["path_elastix_difficulty"]
     generate_elastix_difficulty(path_elastix_difficulty, t_range, heuristic)

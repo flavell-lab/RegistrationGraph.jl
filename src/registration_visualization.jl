@@ -30,8 +30,6 @@ function plot_centroid_match(fixed_img, matches, centroids_actual, centroids_inf
     Plots.scatter!(match_x, match_y, color="red", seriesalpha=0, label="Matched")
 end
 
-# function plot_centroid_vs_roi()
-# end
 
 """
 Plots instance segmentation image and registration-mapped instance segmentation
@@ -45,8 +43,8 @@ and the registration-mapped image is shades of green.
 
 # Optional keyword arguments
 
-- `color_brightness::Real`: minimum RGB value (out of 1) that an object will be plotted with
-- `plot_size`: size of the plot
+- `color_brightness::Real`: minimum RGB value (out of 1) that an object will be plotted with. Default 0.3
+- `plot_size`: size of the plot. Default (600,600)
 """
 function view_roi_regmap(img_roi, img_roi_regmap; color_brightness::Real=0.3, plot_size=(600,600))
     img_plot = gen_regmap_rgb(img_roi, img_roi_regmap; color_brightness=color_brightness)
@@ -194,16 +192,15 @@ The fixed image will be red and the moving image will be green, so yellow indica
 
 # Arguments
 - `param_path::Dict`: Dictionary containing paths to files
-- `param::Dict`: Dictionary containing parameter settings
+- `param::Dict`: Dictionary containing parameter setting `reg_n_resolution`, an array of registration resolutions for each parameter file (eg for affine regstration with 3 resolutions
+    and bspline registration with 4 resolutions, this would be `[3,4]`)
 - `get_basename::Function`: Function mapping two timepoints to the base MHD filename corresponding to them.
 - `fixed::Integer`: timestamp (frame number) of fixed image
 - `moving::Integer`: timestamp (frame number) of moving image
-- `iters`: array of registration resolutions for each parameter file (eg for affine regstration with 3 resolutions
-    and bspline registration with 4 resolutions, this would be `[3,4]`)
 
 # Optional keyword arguments
 - `proj_dim::Integer`: Dimension to project data. Default 3 (z-dimension)
-- `fixed_ch::Integer`: Channel for the fixed image. Default 2. (The moving image is the image automatically generated from the registration.)
+- `fixed_ch_key::Integer`: Key in `param` to channel for the fixed image. Default `ch_marker`. (The moving image is the image automatically generated from the registration.)
 - `regdir_key::String`: Key in `param_path` corresponding to the registration directory. Default `path_dir_reg`.
 - `mhd_key::String`: Key in `param_path` corresponding to the MHD directory. Default `path_dir_mhd_filt`.
 - `result::String`: Name of resulting file. If left as default it the same as the corresponding MHD file.
@@ -254,6 +251,7 @@ The fixed image will be red and the moving image will be green, so yellow indica
 
 # Arguments
 - `param_path::Dict`: Dictionary containing paths to files
+- `param::Dict`: Dictionary containing parameter settings
 - `get_basename::Function`: Function mapping two timepoints to the base MHD filename corresponding to them.
 - `fixed::Integer`: timestamp (frame number) of fixed image
 - `moving::Integer`: timestamp (frame number) of moving image
@@ -262,8 +260,8 @@ The fixed image will be red and the moving image will be green, so yellow indica
 - `proj_dim::Integer`: Dimension to project data. Default 3 (z-dimension)
 - `regdir_key::String`: Key in `param_path` corresponding to the registration directory. Default `path_dir_reg`.
 - `mhd_key::String`: Key in `param_path` corresponding to the MHD directory. Default `path_dir_mhd_filt`.
-- `moving_ch::Integer`: Channel for the moving image. Default 2.
-- `fixed_ch::Integer`: Channel for the fixed image. Default 2.
+- `moving_ch_key::Integer`: Key in `param` corresponding to channel for the moving image. Default `ch_marker`.
+- `fixed_ch_key::Integer`: Key in `param` corresponding to channel for the fixed image. Default `ch_marker`.
 - `contrast_f::Real`: Contrast of fixed image portion of PNG. Default 1.
 - `contrast_m::Real`: Contrast of moving image portion of PNG. Default 1.
 - `swap_colors::Bool`: If set to `true`, fixed image will be green and moving image will be red.
