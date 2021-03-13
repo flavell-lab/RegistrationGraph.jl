@@ -18,57 +18,57 @@ jobs:
           version: '1.5.3'
       - uses: actions/checkout@master
         with:
-          repository: flavell-lab/FlavellBase.jl.git
+          repository: flavell-lab/FlavellBase.jl
           path: ./FlavellBase.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
-          repository: flavell-lab/GPUFilter.jl.git
+          repository: flavell-lab/GPUFilter.jl
           path: ./GPUFilter.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
-          repository: flavell-lab/MHDIO.jl.git
+          repository: flavell-lab/MHDIO.jl
           path: ./MHDIO.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
-          repository: flavell-lab/FFTRegGPU.jl.git
+          repository: flavell-lab/FFTRegGPU.jl
           path: ./FlavellBase.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
-          repository: flavell-lab/ImageDataIO.jl.git
+          repository: flavell-lab/ImageDataIO.jl
           path: ./ImageDataIO.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
-          repository: flavell-lab/WormCurveFinder.jl.git
+          repository: flavell-lab/WormCurveFinder.jl
           path: ./WormCurveFinder.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
-          repository: flavell-lab/Clustering.jl.git
+          repository: flavell-lab/Clustering.jl
           path: ./Clustering.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
-          repository: flavell-lab/WormFeatureDetector.jl.git
+          repository: flavell-lab/WormFeatureDetector.jl
           path: ./WormFeatureDetector.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
-          repository: flavell-lab/SegmentationTools.jl.git
+          repository: flavell-lab/SegmentationTools.jl
           path: ./SegmentationTools.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
-          repository: flavell-lab/ND2Process.jl.git
+          repository: flavell-lab/ND2Process.jl
           path: ./ND2Process.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
-          repository: flavell-lab/SLURMManager.jl.git
+          repository: flavell-lab/SLURMManager.jl
           path: ./SLURMManager.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - name: Install package
