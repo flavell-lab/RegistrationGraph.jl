@@ -1,5 +1,5 @@
 name: Documentation
-
+  
 on:
   push:
     branches:
@@ -16,17 +16,50 @@ jobs:
       - uses: julia-actions/setup-julia@latest
         with:
           version: '1.5.3'
-      - name: Install dependencies
-        uses: actions/checkout@master
+      - uses: actions/checkout@master
         with:
           repository: flavell-lab/FlavellBase.jl.git
+          path: ./FlavellBase.jl
+      - uses: actions/checkout@master
+        with:
           repository: flavell-lab/GPUFilter.jl.git
+          path: ./GPUFilter.jl
+      - uses: actions/checkout@master
+        with:
           repository: flavell-lab/MHDIO.jl.git
+          path: ./MHDIO.jl
+      - uses: actions/checkout@master
+        with:
+          repository: flavell-lab/FFTRegGPU.jl.git
+          path: ./FlavellBase.jl
+      - uses: actions/checkout@master
+        with:
           repository: flavell-lab/ImageDataIO.jl.git
+          path: ./ImageDataIO.jl
+      - uses: actions/checkout@master
+        with:
           repository: flavell-lab/WormCurveFinder.jl.git
+          path: ./WormCurveFinder.jl
+      - uses: actions/checkout@master
+        with:
+          repository: flavell-lab/Clustering.jl.git
+          path: ./Clustering.jl
+      - uses: actions/checkout@master
+        with:
+          repository: flavell-lab/WormFeatureDetector.jl.git
+          path: ./WormFeatureDetector.jl
+      - uses: actions/checkout@master
+        with:
           repository: flavell-lab/SegmentationTools.jl.git
+          path: ./SegmentationTools.jl
+      - uses: actions/checkout@master
+        with:
           repository: flavell-lab/ND2Process.jl.git
+          path: ./ND2Process.jl
+      - uses: actions/checkout@master
+        with:
           repository: flavell-lab/SLURMManager.jl.git
+          path: ./SLURMManager.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
       - name: Install package
