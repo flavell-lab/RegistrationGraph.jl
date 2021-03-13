@@ -264,13 +264,14 @@ Runs elastix on OpenMind. Requires `julia` to be installed under the relevant us
 Note that you cannot have multiple instances of this command running simultaneously with the same `temp_dir`.
 
 # Arguments
-- `cmd_dir_remote::String`: Directory on OpenMind where the elastix sbatch scripts will be stored.
-- `tmp_dir::String`: Temporary directory to store scripts and lists
-- `user::String`: Username on OpenMind
-
-# Optional keyword arguments
-- `server::String`: OpenMind server to ssh into. Default openmind7.mit.edu
-- `partition::String`: Partition to run scripts on in sbatch. Default use-everything
+- `param_path::Dict`: Dictionary of parameter paths including:
+    - `path_om_tmp`: Path to temporary directory on OpenMind.
+    - `path_om_cmd`: Path to elastix command directory on OpenMind.
+    - `path_om_cmd_array`: Path to elastix array command directory on OpenMind.
+- `param::Dict`: Dictionary of parameter settings including:
+    - `user`: OpenMind username
+    - `server`: Login node address on OpenMind
+    - `partition`: Partition to run elastix using (eg `use-everything`)
 """
 function run_elastix_openmind(param_path::Dict, param::Dict)
     temp_dir = param_path["path_om_tmp"]
@@ -295,10 +296,9 @@ end
 Gets the number of running and pending `squeue` commands from the given user.
 
 # Arguments
-- `user::String`: Username on OpenMind
-
-# Optional keyword arguments
-- `server::String`: OpenMind server to ssh into. Default openmind7.mit.edu
+- `param::Dict`: Parameter dictionary including:
+    - `user`: Username on OpenMind
+    - `server`: Login node address on OpenMind
 """
 function get_squeue_status(param::Dict)
     user = param["user"]
@@ -312,11 +312,10 @@ end
 This function stalls until all the user's jobs on OpenMind are completed.
 
 # Arguments
-- `user::String`: Username on OpenMind
-
-# Optional keyword arguments
-- `delay::Integer`: Time to wait between server queries, in seconds. Default 300.
-- `server::String`: OpenMind server to ssh into. Default openmind7.mit.edu
+- `param::Dict`: Parameter dictionary including:
+    - `user`: Username on OpenMind
+    - `server`: Login node address on OpenMind
+    - `elx_wait_delay`: Time to wait between checking whether elastix is done, in seconds
 """
 function wait_for_elastix(param::Dict)
     while get_squeue_status(param) > 0
@@ -325,23 +324,21 @@ function wait_for_elastix(param::Dict)
 end
 
 
-
+### CONTINUE FROM HERE
 
 """
 Syncs registration data from a remote compute server back to the local computer.
 
 # Arguments
 
-- `data_dir_local::String`: Working directory of the data on your machine.
-- `data_dir_remote::String`: Working directory of data on the remote server.
-- `user::String`: Your username on the server.
-
-# Optional Keyword Arguments
-
-- `reg_dir::String`: Path to registered data on server, relative to `data_dir_remote`. Default `Registered`
-- `server::String`: Location of the server containing elastix. Default `openmind7.mit.edu`
+- `param_path::Dict`: Dictionary of paths
+- `param::Dict`: Dictionary of parameters including:
+    - `user`: Username on OpenMind
+    - `server`: Login node address on OpenMind
+- `reg_dir_key::String` (optional, default `path_dir_reg`): Key in `param_path` to the path to the registration output directory
+- `reg_om_dir_key::String` (optional, default `path_om_reg`): Key in `param_path` to the path to the registration output directory on the server
 """
-function sync_registered_data(param_path::Dict, param::Dict; reg_dir_key="path_dir_reg", reg_om_dir_key="path_om_reg")
+function sync_registered_data(param_path::Dict, param::Dict; reg_dir_key::String="path_dir_reg", reg_om_dir_key::String="path_om_reg")
     reg_dir_local = param_path[reg_dir_key] 
     create_dir(reg_dir_local)
     user = param["user"]
@@ -356,12 +353,12 @@ Returns a dictionary of errors per problem and resolution.
 
 # Arguments
 - `problems`: Registration problems to update
-- `rootpath::String`: Working directory of the data on your machine.
-- `data_dir_remote::String`: Working directory of data on the remote server.
-- `resolutions`: Array of number of elastix resolutions that have transform parameter files for each parameter file.
-
-# Optional keyword arguments
-- `reg_dir::String`: Directory of registered data. Default `Registered`.
+- `param_path::Dict`: Dictionary of paths including:
+    - `path_root_process`: Path to data
+    - `path_om_data`: Path to data on server
+- `param::Dict`: Dictionary of parameters
+- `reg_dir_key::String` (optional, default `path_dir_reg`): Key in `param_path` to the path to the registration output directory
+- `n_resolution_key::String` (optional, default `reg_n_resolution`): Key in `param` to array of number of registrations with each parameter file
 """
 function fix_param_paths(problems, param_path::Dict, param::Dict; reg_dir_key::String="path_dir_reg", n_resolution_key::String="reg_n_resolution")
     errors = Dict()
@@ -398,11 +395,11 @@ Averages together registrations. All regstration parameters (including image siz
 
  - `t_range`: Time points to register
  - `param_path::Dict`: Dictionary containing paths to parameter files
- - `reg_dir_key::String`: Key in `param_path` containing registration directory
- - `transform_key::String`: Key in `param_path` contaning transform file names
- - `transform_avg_key::String`: Key in `param_path` contaning averaged transform file names (to be created)
- - `key_param_key::String`: Key in `param_path` containing the `TransformParameters` key.
- - `avg_fn::Function`: Function used to average together registrations. Default `median`.
+ - `reg_dir_key::String` (optional, default `path_dir_reg_activity_marker`): Key in `param_path` containing registration directory
+ - `transform_key::String` (optional, default `name_transform_activity_marker`): Key in `param_path` contaning transform file names
+ - `transform_avg_key::String` (optional, default `name_transform_activity_marker_avg`): Key in `param_path` contaning averaged transform file names (to be created)
+ - `key_param_key::String` (optional, default `key_transform_parameters`): Key in `param_path` containing the `TransformParameters` key.
+ - `avg_fn::Function` (optional, default `median`): Function used to average together registrations. Default `median`.
 """
 function average_am_registrations(t_range, param_path::Dict;
         reg_dir_key::String="path_dir_reg_activity_marker", transform_key::String="name_transform_activity_marker",
