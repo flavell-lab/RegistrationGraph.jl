@@ -19,9 +19,9 @@ The package `WormFeatureDetector.jl` contains a variety of heuristics that can b
 
 ```julia
 # give the heuristic all its parameters in advance, so it's a function of just three arguments
-heur = (rootpath, frame1, frame2) -> heuristic(rootpath, frame1, frame2, param1, param2, param3)
+heur = (t1, t2) -> heuristic(t1, t2, params...)
 # now compute elastix difficulty
-generate_elastix_difficulty("/path/to/data", 1:100, "elastix_difficulty.txt", heur)
+generate_elastix_difficulty("/path/to/elx_difficulty_output_file", 1:100, heur)
 ```
 
 ## Generating a registration problem graph
@@ -64,35 +64,33 @@ Once you're satisfied with the graph, you can save it:
 
 ```julia
 # saves subgraph to a text file containing a list of edges
-output_graph(subgraph, "/path/to/data/registration_problems_1.txt")
+output_graph(subgraph, "/path/to/data/registration_problems.txt")
 ```
 
 ## Running elastix on OpenMind
 
 ### Configuring the server to run elastix
 
-This is implemented by the `write_sbatch_graph` function, which syncs all the data from the local computer to the OpenMind server and generates files that will run elastix through `sbatch`. The data is assumed to be in the same directory, but the parameter files are allowed to be in a different directory. Example code:
+This is implemented by the `write_sbatch_graph` function, which syncs all the data from the local computer to the OpenMind server and generates files that will run elastix through `sbatch`. There are many keyword arguments and parameter settings you can use to control how the registration runs. Example code:
 
 ```julia
 # loads registration problems you previously computed from the graph
-problems = load_registration_problems(["/path/to/data/registration_problems_1.txt"])
+problems = load_registration_problems(["/path/to/data/registration_problems.txt"])
 
 # syncs data to server and generates sbatch files for elastix
-write_sbatch_graph(problems, "/path/to/data", "/path/to/data/on/openmind", "img_prefix", 
-["/path/to/parameters/on/openmind/euler_parameters.txt", "/path/to/parameters/on/openmind/affine_parameters.txt", "/path/to/parameters/on/openmind/bspline_parameters.txt"], 2, "your_username"; head_path="head_pos.txt")
+write_sbatch_graph(problems, param_path, param_path, param)
 
 # runs elastix on OpenMind
-run_elastix_openmind("/path/to/elx_commands_array", "/path/to/temporary/directory", "your_username")
+run_elastix_openmind(param_path, param)
 
 # waits for elastix to finish running
-wait_for_elastix("your_username")
+wait_for_elastix(param)
 
 # syncs data back from server
-sync_registered_data("/path/to/data", "/path/to/data/on/openmind", "your_username")
+sync_registered_data(param_path, param)
 
 # elastix has its transform paramete files use absolute paths - these need to be converted to the path on your machine
-# replace [0,4] with resolutions of the data you're using - I have 4 incremental transform parameter files only for the second (bspline) regisration
-fix_param_paths(problems, "/path/to/data", "/path/to/data/on/openmind", [0,4])
+fix_param_paths(problems, param_path, param)
 ```
 
 ## Checking elastix quality
@@ -104,14 +102,14 @@ The `make_quality_dict` function takes as input a list of metrics, and evaluates
 ```julia
 # initialize dictionary of functions
 # usually, metrics will require other parameters, you will need to specify them here
-# because all input functions must have exactly the parameters rootpath, moving, fixed, resolution
+# because all input functions must have exactly the parameters moving, fixed, resolution
 # if you're using a mask, the keyword parameter mask_dir will also be provided to the function
 evaluation_functions = Dict()
-evaluation_functions["NCC"] = (rootpath, moving, fixed, resolution) ->
-        metric_tfm(calculate_ncc(read_mhd(rootpath, img_prefix, mhd_path, fixed, channel), read_img(MHD(joinpath(rootpath, regdir, "$(moving)to$(fixed)", "result.$(resolution[1]).R$(resolution[2]).mhd")))))
+evaluation_functions["NCC"] = (moving, fixed, resolution) ->
+        metric_tfm(calculate_ncc(read_img(MHD(joinpath(param_path["path_dir_mhd_filt"], param_path["get_basename"](fixed, ch_marker)*".mhd"))), read_img(MHD(joinpath(param_path["path_dir_reg"], "$(moving)to$(fixed)", "result.$(resolution[1]).R$(resolution[2]).mhd")))), threshold=param["reg_quality_threshold"])
 
 # now, compute and output quality dictionary
-q_dict, best_reg = make_quality_dict("/path/to/data", "registration_problems_1.txt", "registration_quality_1.txt", evaluation_functions, "NCC", [(0,0), (0,1), (0,2), (1,0), (1,1), (1,2), (1,3)])
+q_dict, best_reg, q_dict_errors = make_quality_dict(param_path, param, problems, evaluation_functions)
 ```
 
 ## Visualizing registration
@@ -122,7 +120,7 @@ The `make_diff_pngs` command creates a PNG file that does this:
 ```julia
 fixed = 10
 moving = 5
-make_diff_pngs("/path/to/data", "img_prefix", fixed, moving, resolutions)
+make_diff_pngs(param_path, param, get_basename, fixed, moving)
 ```
 
 You can also directly compare an image to a registration-mapped image, together with their ROIs:
