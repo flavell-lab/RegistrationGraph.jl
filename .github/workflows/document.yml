@@ -63,11 +63,6 @@ jobs:
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
-          repository: flavell-lab/ND2Process.jl
-          path: ./ND2Process.jl
-          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
-      - uses: actions/checkout@master
-        with:
           repository: flavell-lab/SLURMManager.jl
           path: ./SLURMManager.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
@@ -81,7 +76,6 @@ jobs:
           Pkg.develop(PackageSpec(path="./Clustering.jl")); 
           Pkg.develop(PackageSpec(path="./WormFeatureDetector.jl")); 
           Pkg.develop(PackageSpec(path="./SegmentationTools.jl")); 
-          Pkg.develop(PackageSpec(path="./ND2Process.jl")); 
           Pkg.develop(PackageSpec(path="./SLURMManager.jl")); 
           Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: Build and deploy
