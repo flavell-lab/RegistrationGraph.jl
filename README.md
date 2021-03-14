@@ -2,6 +2,8 @@
 
 A collection of tools for running elastix registration. Suppose there is a set of N frames to be registered, but the frames are too dissimilar to be able to ensure a quality registration for each pair of frames. In this case, it is often helpful to generate a heuristic to evaluate how similar two frames are to each other (and hence, how likely elastix will be to succeed). Once such a heuristic can be determined, registration problems can be selected to minimize difficulty and maximum path length, as a graph optimization problem. This package provides several heuristics for various registration problems, graph theory solutions for constructing the registration problem graph, and automated syncing of scripts and data to the OpenMind server.
 
+The API is available [here](https://flavell-lab.github.io/RegistrationGraph.jl/dev/).
+
 ## Prerequisites
 
 - This package requires you to have previously installed the `FlavellBase.jl`, `MHDIO.jl`,  `ImageDataIO.jl`, `WormCurveFinder.jl`, `WormFeatureDetector.jl`, `SegmentationTools.jl`, and `SLURMManager.jl` packages from the `flavell-lab` github repository (in that order).
