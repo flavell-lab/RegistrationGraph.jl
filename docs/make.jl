@@ -2,6 +2,4 @@ using Documenter, RegistrationGraph
 
 makedocs(sitename="RegistrationGraph")
 
-deploydocs(
-	   repo="github.com/flavell-lab/RegistrationGraph.jl.git"
-)
+deploydocs(repo="github.com/flavell-lab/RegistrationGraph.jl.git", devbranch="develop")
