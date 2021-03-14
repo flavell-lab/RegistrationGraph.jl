@@ -4,10 +4,10 @@ Additionally, draws lines between matched centroids.
 
 # Arguments
 
-`fixed_image`: fixed image of the worm (2D)
-`matches`: List of pairs of centroids (which are tuples of (x,y) coordinates) that match.
-`centroids_actual`: centroids determined directly from the fixed image
-`centroids_inferred`: centroids determined from the moving image, and then mapped onto the fixed image via registration.
+- `fixed_image`: fixed image of the worm (2D)
+- `matches`: List of pairs of centroids (which are tuples of (x,y) coordinates) that match.
+- `centroids_actual`: centroids determined directly from the fixed image
+- `centroids_inferred`: centroids determined from the moving image, and then mapped onto the fixed image via registration.
 """
 function plot_centroid_match(fixed_img, matches, centroids_actual, centroids_inferred)
     Plots.heatmap(fixed_img, fillcolor=:viridis, aspect_ratio=1)
