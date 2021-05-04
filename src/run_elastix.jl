@@ -191,7 +191,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         # make directory
         reg = joinpath(reg_dir_remote, dir)
         script_str *= "[ ! -d $(reg) ] && mkdir $(reg)\n"
-        script_str *= "source $(env_cmd)"
+        script_str *= "source $(env_cmd)\n"
 
         # Euler registration
         if use_euler
