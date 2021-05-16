@@ -7,6 +7,7 @@ WARNING: This program can permanently delete data if run with incorrect argument
     - `get_basename`: Function that maps channel and time point to MHD filename
     - `path_dir_cmd`: Path to elastix command directory
     - `path_om_cmd`: Path to elastix command directory on the server
+    - `path_om_scripts`: Path to directory to store scripts on the server
     - `path_dir_cmd_array`: Path to elastix array command directory
     - `path_om_cmd_array`: Path to elastix array command directory on the server
     - `path_om_log`: Path to log file on server
@@ -60,6 +61,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         moving_channel_key::String="ch_marker",
         head_dir_key::String="path_head_pos",
         om_data_key::String="path_om_data",
+        om_scripts_key::String="path_om_scripts",
         MHD_dir_key::String="path_dir_mhd_filt",
         MHD_om_dir_key::String="path_om_mhd_filt",
         mask_dir_key::String="path_dir_mask",
@@ -69,6 +71,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         path_head_rotate_key::String="path_head_rotate",
         parameter_files_key::String="parameter_files")
 
+    script_dir_remote = param_path_fixed[scripts_dir_key]
     data_dir_remote = param_path_fixed[om_data_key]
     data_dir_remote_moving = param_path_moving[om_data_key]
     MHD_dir_local = param_path_fixed[MHD_dir_key]
@@ -232,6 +235,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     println("Syncing data to server...")
     # make necessary directories on server
     run(`ssh $(user)@$(server) "mkdir -p $(data_dir_remote)"`)
+    run(`ssh $(user)@$(server) "mkdir -p $(script_dir_remote)"`)
     run(`ssh $(user)@$(server) "mkdir -p $(data_dir_remote_moving)"`)
     run(`ssh $(user)@$(server) "mkdir -p $(log_dir)"`)
     reg = reg_dir_remote
