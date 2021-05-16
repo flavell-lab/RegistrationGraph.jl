@@ -71,7 +71,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         path_head_rotate_key::String="path_head_rotate",
         parameter_files_key::String="parameter_files")
 
-    script_dir_remote = param_path_fixed[scripts_dir_key]
+    script_dir_remote = param_path_fixed[om_scripts_key]
     data_dir_remote = param_path_fixed[om_data_key]
     data_dir_remote_moving = param_path_moving[om_data_key]
     MHD_dir_local = param_path_fixed[MHD_dir_key]
