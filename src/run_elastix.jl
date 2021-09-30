@@ -19,7 +19,7 @@ WARNING: This program can permanently delete data if run with incorrect argument
 - `param::Dict`: Dictionary containing parameters including:
     - `email`: Email to inform user of task termination. If `nothing`, no emails will be sent
     - `use_sbatch`: Use `sbatch`, rather than directly running code on the server. This should always be set to `true` on OpenMind
-    - `server`: Address of server to run code on
+    - `server_dtn`: Address of server to transfer data to
     - `user`: Username on server
     - `array_size`: Size of `sbatch` array to use
 
@@ -110,7 +110,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     job_name = param[job_name_key]
     email = param["email"]
     use_sbatch = param["use_sbatch"]
-    server = param["server"]
+    server = param["server_dtn"]
     user = param["user"]
     array_size = param["array_size"]
 
@@ -341,7 +341,7 @@ Syncs registration data from a remote compute server back to the local computer.
 - `param_path::Dict`: Dictionary of paths
 - `param::Dict`: Dictionary of parameters including:
     - `user`: Username on OpenMind
-    - `server`: Login node address on OpenMind
+    - `server_dtn`: Data transfer node address on OpenMind
 - `reg_dir_key::String` (optional, default `path_dir_reg`): Key in `param_path` to the path to the registration output directory
 - `reg_om_dir_key::String` (optional, default `path_om_reg`): Key in `param_path` to the path to the registration output directory on the server
 """
@@ -349,7 +349,7 @@ function sync_registered_data(param_path::Dict, param::Dict; reg_dir_key::String
     reg_dir_local = param_path[reg_dir_key] 
     create_dir(reg_dir_local)
     user = param["user"]
-    server = param["server"]
+    server = param["server_dtn"]
     reg_dir_remote = param_path[reg_om_dir_key]
     run(Cmd(["rsync", "-r", "$(user)@$(server):"*reg_dir_remote*"/", reg_dir_local]))
 end
