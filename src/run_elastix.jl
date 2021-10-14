@@ -11,6 +11,7 @@ WARNING: This program can permanently delete data if run with incorrect argument
     - `path_dir_cmd_array`: Path to elastix array command directory
     - `path_om_cmd_array`: Path to elastix array command directory on the server
     - `path_om_log`: Path to log file on server
+    - `path_om_tmp`: Path to temporary directory on server
     - `path_om_env`: Path to script to set environment variables
     - `path_run_elastix`: Path to script that runs elastix given command on the server
     - `path_elastix`: Path to elastix executable on the server
@@ -22,6 +23,7 @@ WARNING: This program can permanently delete data if run with incorrect argument
     - `server_dtn`: Address of server to transfer data to
     - `user`: Username on server
     - `array_size`: Size of `sbatch` array to use
+    - `partition`: Priority of jobs on `sbatch`
 
 - `data_dir_remote::String`: Working directory of data on the remote server.
 - `img_prefix::String`: image prefix not including the timestamp. It is assumed that each frame's filename 
@@ -37,6 +39,7 @@ WARNING: This program can permanently delete data if run with incorrect argument
  - `cpu_per_task_key::String`: Key in `param` to CPU cores per elastix task. Default `cpu_per_task`
  - `memory_key::String`: Key in `param` to memory per elastix task. Default `memory`
  - `duration_key::String`: Key in `param` to the duration of each elastix task. Default `duration`
+ - `duration_julia_key::String`: Key in `param` to the duration of the Julia script that runs all elastix task. Default `duration_julia`
  - `job_name_key::String`: Key in `param` to the name of the elastix tasks. Default `job_name`
  - `fixed_channel_key::String`: Key in `param` to the fixed channel. Default `ch_marker`
  - `moving_channel_key::String`: Key in `param` to the moving channel. Default `ch_marker`
@@ -56,6 +59,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         cpu_per_task_key::String="cpu_per_task", 
         memory_key::String="memory", 
         duration_key::String="duration",
+        duration_julia_key::String="duration_julia",
         job_name_key::String="job_name",
         fixed_channel_key::String="ch_marker",
         moving_channel_key::String="ch_marker",
@@ -105,6 +109,8 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     cpu_per_task = param[cpu_per_task_key]
     mem = param[memory_key]
     duration = param[duration_key]
+    duration_julia = param[duration_julia_key]
+
     fixed_channel = param[fixed_channel_key]
     moving_channel = param[moving_channel_key]
     job_name = param[job_name_key]
@@ -113,6 +119,10 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     server = param["server_dtn"]
     user = param["user"]
     array_size = param["array_size"]
+
+    temp_dir = param_path["path_om_tmp"]
+    temp_file = joinpath(temp_dir, "elx_commands.txt")
+    partition = param["partition"]
 
 
     # erase previous scripts and replace them with new ones
@@ -126,6 +136,8 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     create_dir(cmd_dir_local)
     create_dir(cmd_dir_array_local)
     duration_str = Dates.format(duration, "HH:MM:SS")
+    duration_julia_str = Dates.format(duration_julia, "HH:MM:SS")
+
 
     # Euler registration requires knowing worm head location
     use_euler = (head_rotate_path !== nothing)
@@ -232,6 +244,24 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         end
     end
 
+    # write sbatch script to run Julia script
+    julia_sbatch_str = replace("#!/bin/bash
+                #SBATCH --job-name=julia_run_elx
+                #SBATCH --output=$(log_dir)/julia_run_elx.txt
+                #SBATCH --nodes=1
+                #SBATCH --ntasks=1
+                #SBATCH --cpus-per-task=1
+                #SBATCH --time=$(duration_julia_str)
+                #SBATCH --mem=$(mem)G
+                
+                julia -e \"using SLURMManager; submit_scripts(\\\"$(temp_file)\\\", partition=\\\"$(partition)\\\")\n", "    " => "")
+
+    julia_sbatch_file = joinpath(param_path["path_root_process"], "run_elastix_julia.sh")
+
+    open(julia_sbatch_file, "w") do f
+        write(f, julia_sbatch_str)
+    end
+
     println("Syncing data to server...")
     # make necessary directories on server
     run(`ssh $(user)@$(server) "mkdir -p $(data_dir_remote)"`)
@@ -241,6 +271,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     reg = reg_dir_remote
     run(`ssh $(user)@$(server) "mkdir -p $(reg)"`)
     # sync all data to the server
+    run(Cmd(["rsync", julia_sbatch_file, "$(user)@$(server):"*data_dir_remote]))
     if clear_cmd_dir
         run(Cmd(["rsync", "-r", "--delete", cmd_dir_local*"/", "$(user)@$(server):"*cmd_dir_remote]))
         if cmd_dir_array_local !== nothing
@@ -292,10 +323,11 @@ function run_elastix_openmind(param_path::Dict, param::Dict)
     user = param["user"]
     server = param["server"]
     partition = param["partition"]
+    run_elastix_julia_path = joinpath(param_path["path_om_data"], "run_elastix_julia.sh")
     run(`ssh $(user)@$(server) "mkdir -p $(temp_dir)"`)
     run(`ssh $(user)@$(server) "rm -f $(all_temp_files)"`)
     run(`ssh $(user)@$(server) "ls -d $(all_script_files) > $(temp_file)"`)
-    run(`ssh $(user)@$(server) "julia -e \"using SLURMManager; submit_scripts(\\\"$(temp_file)\\\", partition=\\\"$(partition)\\\")\""`)
+    run(`ssh $(user)@$(server) "sbatch $(run_elastix_julia_path)"`)
 end
 
 
