@@ -366,7 +366,7 @@ end
 ### CONTINUE FROM HERE
 
 """
-Syncs registration data from a remote compute server back to the local computer.
+Deletes unnecessary files, then syncs registration data from a remote compute server back to the local computer.
 
 # Arguments
 
@@ -383,6 +383,12 @@ function sync_registered_data(param_path::Dict, param::Dict; reg_dir_key::String
     user = param["user"]
     server = param["server_dtn"]
     reg_dir_remote = param_path[reg_om_dir_key]
+
+    # delete unnecessary files
+    run(`ssh $(user)@$(server) "find $(reg_dir_remote) -name IterationInfo* -delete"`)
+    run(`ssh $(user)@$(server) "find $(reg_dir_remote) -name elastix.log -delete"`)
+    
+    # sync remaining files
     run(Cmd(["rsync", "-r", "$(user)@$(server):"*reg_dir_remote*"/", reg_dir_local]))
 end
 
