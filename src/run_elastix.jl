@@ -120,7 +120,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     user = param["user"]
     array_size = param["array_size"]
 
-    temp_dir = param_path["path_om_tmp"]
+    temp_dir = param_path_fixed["path_om_tmp"]
     temp_file = joinpath(temp_dir, "elx_commands.txt")
     partition = param["partition"]
 
@@ -256,7 +256,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
                 
                 julia -e \"using SLURMManager; submit_scripts(\\\"$(temp_file)\\\", partition=\\\"$(partition)\\\")\n", "    " => "")
 
-    julia_sbatch_file = joinpath(param_path["path_root_process"], "run_elastix_julia.sh")
+    julia_sbatch_file = joinpath(param_path_fixed["path_root_process"], "run_elastix_julia.sh")
 
     open(julia_sbatch_file, "w") do f
         write(f, julia_sbatch_str)
