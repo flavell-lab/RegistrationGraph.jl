@@ -254,7 +254,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
                 #SBATCH --time=$(duration_julia_str)
                 #SBATCH --mem=$(mem)G
                 
-                julia -e \"using SLURMManager; submit_scripts(\\\"$(temp_file)\\\", partition=\\\"$(partition)\\\")\n", "    " => "")
+                julia -e \"using SLURMManager; submit_scripts(\\\"$(temp_file)\\\", partition=\\\"$(partition)\\\")\"\n", "    " => "")
 
     julia_sbatch_file = joinpath(param_path_fixed["path_root_process"], "run_elastix_julia.sh")
 
