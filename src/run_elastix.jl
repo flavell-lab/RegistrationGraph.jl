@@ -136,7 +136,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     create_dir(cmd_dir_local)
     create_dir(cmd_dir_array_local)
     duration_str = Dates.format(duration, "HH:MM:SS")
-    duration_julia_str = Dates.format(duration_julia, "HH:MM:SS")
+    duration_julia_str = duration_julia
 
 
     # Euler registration requires knowing worm head location
