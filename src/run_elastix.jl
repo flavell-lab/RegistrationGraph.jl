@@ -300,6 +300,7 @@ end
 """
 Runs elastix on OpenMind. Requires `julia` to be installed under the relevant username and activated in the default ssh shell.
 Note that you cannot have multiple instances of this command running simultaneously with the same `temp_dir`.
+Returns the jobid of the Julia script-submission job.
 
 # Arguments
 - `param_path::Dict`: Dictionary of parameter paths including:
@@ -327,9 +328,16 @@ function run_elastix_openmind(param_path::Dict, param::Dict)
     run(`ssh $(user)@$(server) "mkdir -p $(temp_dir)"`)
     run(`ssh $(user)@$(server) "rm -f $(all_temp_files)"`)
     run(`ssh $(user)@$(server) "ls -d $(all_script_files) > $(temp_file)"`)
-    run(`ssh $(user)@$(server) "sbatch $(run_elastix_julia_path)"`)
+    return squeue_submit_sbatch_remote(param, run_elastix_julia_path)
 end
 
+
+function squeue_submit_sbatch_remote(param, path_sh; partition="normal")
+    user = param["user"]
+    server = param["server"]
+    jobid = run_parse_int(pipeline(`ssh $(user)@$(server) "sbatch --partition=$(partition) $path_sh"`, `awk '{ print $4 }'`))
+    return jobid
+end
 
 """
 Gets the number of running and pending `squeue` commands from the given user.
@@ -347,6 +355,48 @@ function get_squeue_status(param::Dict)
     return running + pending
 end
 
+
+"""
+Gets the number of running and pending `squeue` commands from the given user.
+
+# Arguments
+- `param::Dict`: Parameter dictionary including:
+    - `user`: Username on OpenMind
+    - `server`: Login node address on OpenMind
+- `jobid::Int`: Sbatch job ID of the Julia script-submission script
+"""
+function get_squeue_status(param::Dict, jobid::Int)
+    user = param["user"]
+    server = param["server"]
+    running = run_parse_int(pipeline(`ssh $(user)@$(server) "julia -e \"using SLURMManager; println(squeue_n_running($(jobid)))\""`))
+    pending = run_parse_int(pipeline(`ssh $(user)@$(server) "julia -e \"using SLURMManager; println(squeue_n_pending($(jobid)))\""`))
+    return running + pending
+end
+
+"""
+Get a lock in `param_path[lock_key]`. Wait a minimum of `param["lock_wait"]` between successive lock checks.
+"""
+function get_lock(param_path::Dict, param::Dict; lock_key::String="path_dir_lock")
+    while length(readdir(param_path[lock_key])) > 0
+        sleep(rand() + param["lock_wait"])
+    end
+    touch(joinpath(param_path[lock_key], split(param_path["path_root_process"], "/")[end]*".lock"))
+
+    # check for failed race condition
+    sleep(rand() + param["lock_wait"])
+    if length(readdir(param_path[lock_key])) > 1
+        release_lock(param_path, param; lock_key=lock_key)
+        get_lock(param_path, param; lock_key=lock_key)
+    end
+end
+
+"""
+Release a lock in `param_path[lock_key]`.
+"""
+function release_lock(param_path::Dict, param::Dict; lock_key::String="path_dir_lock")
+    rm(joinpath(param_path[lock_key], split(param_path["path_root_process"], "/")[end]*".lock"))
+end
+
 """
 This function stalls until all the user's jobs on OpenMind are completed.
 
@@ -362,8 +412,21 @@ function wait_for_elastix(param::Dict)
     end
 end
 
+"""
+This function stalls until the specified job is completed.
 
-### CONTINUE FROM HERE
+# Arguments
+- `param::Dict`: Parameter dictionary including:
+    - `user`: Username on OpenMind
+    - `server`: Login node address on OpenMind
+    - `elx_wait_delay`: Time to wait between checking whether elastix is done, in seconds
+- `jobid::Int`: Sbatch job ID of the Julia script-submission script
+"""
+function wait_for_elastix(param::Dict, jobid::Int)
+    while get_squeue_status(param, jobid) > 0
+        sleep(param["elx_wait_delay"])
+    end
+end
 
 """
 Deletes unnecessary files, then syncs registration data from a remote compute server back to the local computer.

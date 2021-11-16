@@ -36,6 +36,9 @@ export
     calculate_ncc,
     metric_tfm,
     run_elastix_openmind,
+    squeue_submit_sbatch_remote,
     get_squeue_status,
-    wait_for_elastix
+    wait_for_elastix,
+    get_lock,
+    release_lock
 end # module
