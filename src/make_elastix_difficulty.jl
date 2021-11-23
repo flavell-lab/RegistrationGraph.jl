@@ -12,7 +12,7 @@ function generate_elastix_difficulty(path_elastix_difficulty::String, t_range, h
     n_t = length(t_range)
     difficulty = zeros(n_t, n_t)
     @showprogress for (i,t1) = enumerate(t_range)
-        for (j,t2) = enumerate(t_range)
+        Threads.@threads for (j,t2) = enumerate(t_range)
             # skip duplicate calculations
             if j <= i
                 continue
