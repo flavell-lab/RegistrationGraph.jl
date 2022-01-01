@@ -4,7 +4,7 @@ WARNING: This program can permanently delete data if run with incorrect argument
 # Arguments
 - `edges`: List of registration problems to perform
 - `param_path_fixed::Dict`: Dictionary containing paths for the fixed images including:
-    - `get_basename`: Function that maps channel and time point to MHD filename
+    - `get_basename`: Function that maps channel and time point to NRRD filename
     - `path_dir_cmd`: Path to elastix command directory
     - `path_om_cmd`: Path to elastix command directory on the server
     - `path_om_scripts`: Path to directory to store scripts on the server
@@ -27,7 +27,7 @@ WARNING: This program can permanently delete data if run with incorrect argument
 
 - `data_dir_remote::String`: Working directory of data on the remote server.
 - `img_prefix::String`: image prefix not including the timestamp. It is assumed that each frame's filename 
-    will be, eg, `img_prefix_t0123_ch2.mhd` for frame 123 with channel=2.
+    will be, eg, `img_prefix_t0123_ch2.nrrd` for frame 123 with channel=2.
 - `parameter_files::Array{String,1}`: List of parameter files for elastix to use, in order of their application, 
     as stored on the remote server. These parameter files are NOT assumed to be in the working directory.
 - `channel::Integer`: The channel to use for registration.
@@ -45,8 +45,8 @@ WARNING: This program can permanently delete data if run with incorrect argument
  - `moving_channel_key::String`: Key in `param` to the moving channel. Default `ch_marker`
  - `head_dir_key::String`: Key in `param_path_*` to the head position of the worm. Default `path_head_pos`
  - `om_data_key::String`: Key in `param_path_*` to the path to sync the data on the server. Default `path_om_data`
- - `MHD_dir_key::String`: Key in `param_path_*` to the path to the MHD files. Default `path_dir_mhd_filt`
- - `MHD_om_dir_key::String`: Key in `param_path_*` to the path to the MHD files on the server. Default `path_om_mhd_filt`
+ - `NRRD_dir_key::String`: Key in `param_path_*` to the path to the NRRD files. Default `path_dir_nrrd_filt`
+ - `NRRD_om_dir_key::String`: Key in `param_path_*` to the path to the NRRD files on the server. Default `path_om_nrrd_filt`
  - `mask_dir_key::String`: Key in `param_path_*` to the mask path. Default `path_dir_mask`
  - `mask_om_dir_key::String`: Key in `param_path_*` to the mask path on the server. Default `path_om_mask`
  - `reg_dir_key::String`: Key in `param_path_*` to the registration output directory. Default `path_dir_reg`
@@ -66,8 +66,8 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         head_dir_key::String="path_head_pos",
         om_data_key::String="path_om_data",
         om_scripts_key::String="path_om_scripts",
-        MHD_dir_key::String="path_dir_mhd_filt",
-        MHD_om_dir_key::String="path_om_mhd_filt",
+        nrrd_dir_key::String="path_dir_nrrd_filt",
+        nrrd_om_dir_key::String="path_om_nrrd_filt",
         mask_dir_key::String="path_dir_mask",
         mask_om_dir_key::String="path_om_mask",
         reg_dir_key::String="path_dir_reg",
@@ -78,10 +78,10 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     script_dir_remote = param_path_fixed[om_scripts_key]
     data_dir_remote = param_path_fixed[om_data_key]
     data_dir_remote_moving = param_path_moving[om_data_key]
-    MHD_dir_local = param_path_fixed[MHD_dir_key]
-    MHD_dir_local_moving = param_path_moving[MHD_dir_key]
-    MHD_dir_remote = param_path_fixed[MHD_om_dir_key]
-    MHD_dir_remote_moving = param_path_moving[MHD_om_dir_key]
+    nrrd_dir_local = param_path_fixed[nrrd_dir_key]
+    nrrd_dir_local_moving = param_path_moving[nrrd_dir_key]
+    nrrd_dir_remote = param_path_fixed[nrrd_om_dir_key]
+    nrrd_dir_remote_moving = param_path_moving[nrrd_om_dir_key]
     mask_dir_local = param_path_fixed[mask_dir_key]
     mask_dir_local_moving = param_path_moving[mask_dir_key]
     mask_dir_remote = param_path_fixed[mask_om_dir_key]
@@ -211,8 +211,8 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         # Euler registration
         if use_euler
             script_str *= "python $(head_rotate_path)"*
-                " "*joinpath(MHD_dir_remote, get_basename(edge[2], fixed_channel)*".mhd")*
-                " "*joinpath(MHD_dir_remote_moving, get_basename_moving(edge[1], moving_channel)*".mhd")*
+                " "*joinpath(nrrd_dir_remote, get_basename(edge[2], fixed_channel)*".nrrd")*
+                " "*joinpath(nrrd_dir_remote_moving, get_basename_moving(edge[1], moving_channel)*".nrrd")*
                 " "*joinpath(reg_dir_remote, dir, "$(dir)_euler.txt")*
                 " $(head_pos[edge[2]][1]),$(head_pos[edge[2]][2])"*
                 " $(head_pos_moving[edge[1]][1]),$(head_pos_moving[edge[1]][2]) > $(joinpath(reg_dir_remote, dir, euler_logfile))\n"
@@ -220,13 +220,13 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         
         # elastix image and output parameters
         script_str *= elastix_path*
-            " -f "*joinpath(MHD_dir_remote, get_basename(edge[2], fixed_channel)*".mhd")*
-            " -m "*joinpath(MHD_dir_remote_moving, get_basename_moving(edge[1], moving_channel)*".mhd")*
+            " -f "*joinpath(nrrd_dir_remote, get_basename(edge[2], fixed_channel)*".nrrd")*
+            " -m "*joinpath(nrrd_dir_remote_moving, get_basename_moving(edge[1], moving_channel)*".nrrd")*
             " -out "*joinpath(reg_dir_remote, dir)
         # mask parameters
         if mask_dir_local !== nothing
-            script_str *= " -fMask "*joinpath(mask_dir_remote, get_basename(edge[2], fixed_channel)*".mhd")*
-            " -mMask "*joinpath(mask_dir_remote_moving, get_basename_moving(edge[1], moving_channel)*".mhd")
+            script_str *= " -fMask "*joinpath(mask_dir_remote, get_basename(edge[2], fixed_channel)*".nrrd")*
+            " -mMask "*joinpath(mask_dir_remote_moving, get_basename_moving(edge[1], moving_channel)*".nrrd")
         end
         # initial condition parameters
         if use_euler
@@ -283,9 +283,9 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
             run(Cmd(["rsync", "-r", cmd_dir_array_local*"/", "$(user)@$(server):"*cmd_dir_array_remote]))
         end
     end
-    run(Cmd(["rsync", "-r", MHD_dir_local*"/", "$(user)@$(server):"*MHD_dir_remote]))
+    run(Cmd(["rsync", "-r", nrrd_dir_local*"/", "$(user)@$(server):"*nrrd_dir_remote]))
     if param_path_fixed != param_path_moving
-        run(Cmd(["rsync", "-r", "--delete", MHD_dir_local_moving*"/", "$(user)@$(server):"*MHD_dir_remote_moving]))
+        run(Cmd(["rsync", "-r", "--delete", nrrd_dir_local_moving*"/", "$(user)@$(server):"*nrrd_dir_remote_moving]))
     end
     if mask_dir_local !== nothing
         run(Cmd(["rsync", "-r", "--delete", mask_dir_local*"/", "$(user)@$(server):"*mask_dir_remote]))

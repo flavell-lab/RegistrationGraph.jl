@@ -1,7 +1,8 @@
 module RegistrationGraph
 
-using MHDIO, Images, Statistics, LinearAlgebra, Graphs, FlavellBase, SegmentationTools, SLURMManager,
-        SimpleWeightedGraphs, ProgressMeter, Interact, Plots, Dates, Printf, ImageDataIO, PyPlot
+using NRRDIO, Images, Statistics, LinearAlgebra, Graphs, FlavellBase,
+    SegmentationTools, SLURMManager, SimpleWeightedGraphs, ProgressMeter,
+    Interact, Plots, Dates, Printf, ImageDataIO, PyPlot
 
 include("make_elastix_difficulty.jl")
 include("assess_registration_quality.jl")
@@ -32,7 +33,7 @@ export
     make_rgb_arr,
     make_diff_pngs,
     make_diff_pngs_base,
-    mhd_to_png,
+    nrrd_to_png,
     calculate_ncc,
     metric_tfm,
     run_elastix_openmind,
