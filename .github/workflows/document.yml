@@ -15,11 +15,21 @@ jobs:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@latest
         with:
-          version: '1.5.3'
+          version: '1.7.0'
       - uses: actions/checkout@master
         with:
           repository: flavell-lab/FlavellBase.jl
           path: ./FlavellBase.jl
+          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
+      - uses: actions/checkout@master
+        with:
+          repository: flavell-lab/TotalVariation.jl
+          path: ./TotalVariation.jl
+          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
+      - uses: actions/checkout@master
+        with:
+          repository: flavell-lab/SegmentationStats.jl
+          path: ./SegmentationStats.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
@@ -28,8 +38,8 @@ jobs:
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
-          repository: flavell-lab/MHDIO.jl
-          path: ./MHDIO.jl
+          repository: flavell-lab/NRRDIO.jl
+          path: ./NRRDIO.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
@@ -40,6 +50,11 @@ jobs:
         with:
           repository: flavell-lab/ImageDataIO.jl
           path: ./ImageDataIO.jl
+          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
+      - uses: actions/checkout@master
+        with:
+          repository: flavell-lab/UNet2D.jl
+          path: ./UNet2D.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
       - uses: actions/checkout@master
         with:
@@ -66,18 +81,32 @@ jobs:
           repository: flavell-lab/SLURMManager.jl
           path: ./SLURMManager.jl
           token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
-      - name: Install package
+      - uses: actions/checkout@master
+        with:
+          repository: flavell-lab/unet2d
+          path: ./unet2d
+          token: ${{ secrets.GOLDENRATIO1618_ACCESS_TOKEN }}
+      - name: Install Julia Python environment
         run: julia --project=docs/ -e 'using Pkg; 
           Pkg.add("PyCall");
           ENV["PYTHON"] = "";
           Pkg.build("PyCall");
           Pkg.add("PyPlot");
-          Pkg.build("PyPlot");
+          Pkg.build("PyPlot");'
+      - name: Setup python packages
+        run: ~/.julia/conda/3/bin/pip install torch==1.8.2+cu111 torchvision==0.9.2+cu111 torchaudio==0.8.2 -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html;
+          cd unet2d;
+          ~/.julia/conda/3/bin/pip install .
+      - name: Install packages
+        run: julia --project=docs/ -e 'using Pkg;
           Pkg.develop(PackageSpec(path="./FlavellBase.jl"));
+          Pkg.develop(PackageSpec(path="./TotalVariation.jl"));
+          Pkg.develop(PackageSpec(path="./SegmentationStats.jl"));
           Pkg.develop(PackageSpec(path="./GPUFilter.jl"));
-          Pkg.develop(PackageSpec(path="./MHDIO.jl")); 
+          Pkg.develop(PackageSpec(path="./NRRDIO.jl")); 
           Pkg.develop(PackageSpec(path="./FFTRegGPU.jl")); 
           Pkg.develop(PackageSpec(path="./ImageDataIO.jl")); 
+          Pkg.develop(PackageSpec(path="./UNet2D.jl"));
           Pkg.develop(PackageSpec(path="./WormCurveFinder.jl")); 
           Pkg.develop(PackageSpec(path="./Clustering.jl")); 
           Pkg.develop(PackageSpec(path="./WormFeatureDetector.jl")); 
