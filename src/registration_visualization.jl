@@ -194,7 +194,7 @@ The fixed image will be red and the moving image will be green, so yellow indica
 - `param_path::Dict`: Dictionary containing paths to files
 - `param::Dict`: Dictionary containing parameter setting `reg_n_resolution`, an array of registration resolutions for each parameter file (eg for affine regstration with 3 resolutions
     and bspline registration with 4 resolutions, this would be `[3,4]`)
-- `get_basename::Function`: Function mapping two timepoints to the base MHD filename corresponding to them.
+- `get_basename::Function`: Function mapping two timepoints to the base NRRD filename corresponding to them.
 - `fixed::Integer`: timestamp (frame number) of fixed image
 - `moving::Integer`: timestamp (frame number) of moving image
 
@@ -202,19 +202,23 @@ The fixed image will be red and the moving image will be green, so yellow indica
 - `proj_dim::Integer`: Dimension to project data. Default 3 (z-dimension)
 - `fixed_ch_key::Integer`: Key in `param` to channel for the fixed image. Default `ch_marker`. (The moving image is the image automatically generated from the registration.)
 - `regdir_key::String`: Key in `param_path` corresponding to the registration directory. Default `path_dir_reg`.
-- `mhd_key::String`: Key in `param_path` corresponding to the MHD directory. Default `path_dir_mhd_filt`.
-- `result::String`: Name of resulting file. If left as default it the same as the corresponding MHD file.
+- `nrrd_key::String`: Key in `param_path` corresponding to the NRRD directory. Default `path_dir_nrrd_filt`.
+- `result::String`: Name of resulting file. If left as default it the same as the corresponding NRRD file.
 - `contrast_f::Real`: Contrast of fixed image portion of PNG. Default 1.
 - `contrast_m::Real`: Contrast of moving image portion of PNG. Default 1.
 - `swap_colors::Bool`: If set to `true`, fixed image will be green and moving image will be red.
 """
-function make_diff_pngs(param_path::Dict, param::Dict, get_basename::Function, fixed::Integer, moving::Integer;
-        proj_dim::Integer=3, fixed_ch_key::String="ch_marker", regdir_key::String="path_dir_reg", mhd_key="path_dir_mhd_filt",
-        result::Union{Nothing,String}=nothing, contrast_f::Real=1, contrast_m::Real=1, swap_colors::Bool=false)
+function make_diff_pngs(param_path::Dict, param::Dict, get_basename::Function,
+    fixed::Integer, moving::Integer; proj_dim::Integer=3,
+    fixed_ch_key::String="ch_marker", regdir_key::String="path_dir_reg",
+    nrrd_key="path_dir_nrrd_filt", result::Union{Nothing,String}=nothing,
+    contrast_f::Real=1, contrast_m::Real=1, swap_colors::Bool=false)
     fixed_ch = param[fixed_ch_key]
     reg_path = joinpath(param_path[regdir_key], string(moving) * "to" * string(fixed))
-    fixed_img_path = joinpath(param_path[mhd_key], get_basename(fixed, fixed_ch)*".mhd")
-    fixed_stack = dropdims(maximum(read_img(MHD(fixed_img_path)), dims=proj_dim), dims=proj_dim)
+    path_fixed_img = joinpath(param_path[nrrd_key],
+        get_basename(fixed, fixed_ch)*".nrrd")
+    fixed_stack = dropdims(maximum(read_img(NRRD(path_fixed_img)),
+            dims=proj_dim), dims=proj_dim)
     iters = param["reg_n_resolution"]
     error = false
     for i=1:length(iters)
@@ -224,10 +228,10 @@ function make_diff_pngs(param_path::Dict, param::Dict, get_basename::Function, f
             else
                 img_path = reg_path * "/" * result
             end
-            mhd_path = img_path * ".mhd"
-            png_path = img_path * "_"*string(proj_dim)*".png"
+            path_nrrd = img_path * ".nrrd"
+            path_png = img_path * "_"*string(proj_dim)*".png"
             try
-                moving_stack = dropdims(maximum(read_img(MHD(mhd_path)), dims=proj_dim), dims=proj_dim)
+                moving_stack = dropdims(maximum(read_img(NRRD(path_nrrd)), dims=proj_dim), dims=proj_dim)
                 blank_stack = zeros(size(fixed_stack))
                 fs_new = map(x->min(x,1), fixed_stack / maximum(fixed_stack) * contrast_f)
                 ms_new = map(x->min(x,1), moving_stack / maximum(moving_stack) * contrast_m)
@@ -236,7 +240,7 @@ function make_diff_pngs(param_path::Dict, param::Dict, get_basename::Function, f
                 else
                     rgb_stack = make_rgb_arr(fs_new, ms_new, blank_stack)
                 end
-                imsave(png_path, rgb_stack, vmin=0);
+                imsave(path_png, rgb_stack, vmin=0);
             catch e
                 error = true
             end
@@ -252,14 +256,14 @@ The fixed image will be red and the moving image will be green, so yellow indica
 # Arguments
 - `param_path::Dict`: Dictionary containing paths to files
 - `param::Dict`: Dictionary containing parameter settings
-- `get_basename::Function`: Function mapping two timepoints to the base MHD filename corresponding to them.
+- `get_basename::Function`: Function mapping two timepoints to the base NRRD filename corresponding to them.
 - `fixed::Integer`: timestamp (frame number) of fixed image
 - `moving::Integer`: timestamp (frame number) of moving image
 
 # Optional keyword arguments
 - `proj_dim::Integer`: Dimension to project data. Default 3 (z-dimension)
 - `regdir_key::String`: Key in `param_path` corresponding to the registration directory. Default `path_dir_reg`.
-- `mhd_key::String`: Key in `param_path` corresponding to the MHD directory. Default `path_dir_mhd_filt`.
+- `nrrd_key::String`: Key in `param_path` corresponding to the NRRD directory. Default `path_dir_nrrd_filt`.
 - `moving_ch_key::Integer`: Key in `param` corresponding to channel for the moving image. Default `ch_marker`.
 - `fixed_ch_key::Integer`: Key in `param` corresponding to channel for the fixed image. Default `ch_marker`.
 - `contrast_f::Real`: Contrast of fixed image portion of PNG. Default 1.
@@ -267,34 +271,45 @@ The fixed image will be red and the moving image will be green, so yellow indica
 - `swap_colors::Bool`: If set to `true`, fixed image will be green and moving image will be red.
 - `png_name::String`: Name of output file. Default `noreg.png`
 """
-function make_diff_pngs_base(param_path::Dict, param::Dict, get_basename::Function, fixed::Integer, moving::Integer;
-        proj_dim::Integer=3, regdir_key::String="path_dir_reg", mhd_key="path_dir_mhd_filt", moving_ch_key::String="ch_marker", 
-        fixed_ch_key::String="ch_marker", contrast_f::Real=1, contrast_m::Real=1, swap_colors::Bool=false, png_name="noreg.png")
+function make_diff_pngs_base(param_path::Dict, param::Dict, get_basename::Function,
+    fixed::Integer, moving::Integer; proj_dim::Integer=3,
+    regdir_key::String="path_dir_reg", nrrd_key="path_dir_nrrd_filt",
+    moving_ch_key::String="ch_marker", fixed_ch_key::String="ch_marker",
+    contrast_f::Real=1, contrast_m::Real=1, swap_colors::Bool=false, png_name="noreg.png")
     fixed_ch = param[fixed_ch_key]
     moving_ch = param[moving_ch_key]
-    moving_img_path = joinpath(param_path[mhd_key], get_basename(moving, moving_ch)*".mhd")
-    fixed_img_path = joinpath(param_path[mhd_key], get_basename(fixed, fixed_ch)*".mhd")
-    png_path = joinpath(param_path[regdir_key], string(moving) * "to" * string(fixed), png_name)
-    fixed_stack = dropdims(maximum(read_img(MHD(fixed_img_path)), dims=proj_dim), dims=proj_dim)
+    
+    path_moving_img = joinpath(param_path[nrrd_key], get_basename(moving, moving_ch)*".nrrd")
+    path_fixed_img = joinpath(param_path[nrrd_key], get_basename(fixed, fixed_ch)*".nrrd")
+    path_ong = joinpath(param_path[regdir_key], string(moving) * "to" * string(fixed), png_name)
+
+    fixed_stack = dropdims(maximum(read_img(NRRD(fixed_img_path)),
+            dims=proj_dim), dims=proj_dim)
+    moving_stack = dropdims(maximum(read_img(NRRD(moving_img_path)),
+            dims=proj_dim), dims=proj_dim)
     s = size(fixed_stack)
-    moving_stack = dropdims(maximum(read_img(MHD(moving_img_path)), dims=proj_dim), dims=proj_dim)
     m = size(moving_stack)
-    fixed_stack = map(x->min(x,1), fixed_stack[1:min(s[1],m[1]),1:min(s[2],m[2])] / maximum(fixed_stack) * contrast_f)
-    moving_stack = map(x->min(x,1), moving_stack[1:min(s[1],m[1]),1:min(s[2],m[2])] / maximum(moving_stack) * contrast_m)
+    
+    fixed_stack = map(x->min(x,1), fixed_stack[1:min(s[1],m[1]),1:min(s[2],m[2])] /
+        maximum(fixed_stack) * contrast_f)
+    moving_stack = map(x->min(x,1), moving_stack[1:min(s[1],m[1]),1:min(s[2],m[2])] /
+        maximum(moving_stack) * contrast_m)
     blank_stack = zeros((min(s[1],m[1]),min(s[2],m[2])))
     if swap_colors
-        rgb_stack = make_rgb_arr(moving_stack / maximum(moving_stack), fixed_stack / maximum(fixed_stack), blank_stack)
+        rgb_stack = make_rgb_arr(moving_stack / maximum(moving_stack), fixed_stack /
+            maximum(fixed_stack), blank_stack)
     else
-        rgb_stack = make_rgb_arr(fixed_stack / maximum(fixed_stack), moving_stack / maximum(moving_stack), blank_stack)
+        rgb_stack = make_rgb_arr(fixed_stack / maximum(fixed_stack), moving_stack /
+            maximum(moving_stack), blank_stack)
     end
     imsave(png_path, rgb_stack, vmin=0);
 end
 
 """
-Converts an mhd file at `mhd_path::String` into a PNG file, saved to path `png_path::String`, using maximum intensity projection.
+Converts an nrrd file at `nrrd_path::String` into a PNG file, saved to path `png_path::String`, using maximum intensity projection.
 The optional argument `proj_dim` (default 3) can be changed to project in a different dimension.
 """
-function mhd_to_png(mhd_path, png_path; proj_dim=3)
-    stack = dropdims(maximum(read_img(MHD(mhd_path)), dims=proj_dim), dims=proj_dim)
+function nrrd_to_png(nrrd_path, png_path; proj_dim=3)
+    stack = dropdims(maximum(read_img(NRRD(nrrd_path)), dims=proj_dim), dims=proj_dim)
     imsave(png_path, stack, vmin=median(stack), cmap="gray")
 end

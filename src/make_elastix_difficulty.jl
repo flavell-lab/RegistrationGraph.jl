@@ -11,13 +11,19 @@ Generates an elastix difficulty file based on the given heuristic.
 function generate_elastix_difficulty(path_elastix_difficulty::String, t_range, heuristic::Function)
     n_t = length(t_range)
     difficulty = zeros(n_t, n_t)
+
     @showprogress for (i,t1) = enumerate(t_range)
-        for (j,t2) = enumerate(t_range)
-            # skip duplicate calculations
-            if j <= i
-                continue
+        # need to initialize array before multithreading (otherwise it crashes)
+        if i == 1
+            for j=i+1:length(t_range)
+                t2 = t_range[j]
+                difficulty[i, j] = heuristic(t1, t2)
             end
-            difficulty[i, j] = heuristic(t1, t2)
+        else
+            Threads.@threads for j=i+1:length(t_range)
+                t2 = t_range[j]
+                difficulty[i, j] = heuristic(t1, t2)
+            end
         end
     end
     

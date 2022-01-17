@@ -4,13 +4,14 @@ WARNING: This program can permanently delete data if run with incorrect argument
 # Arguments
 - `edges`: List of registration problems to perform
 - `param_path_fixed::Dict`: Dictionary containing paths for the fixed images including:
-    - `get_basename`: Function that maps channel and time point to MHD filename
+    - `get_basename`: Function that maps channel and time point to NRRD filename
     - `path_dir_cmd`: Path to elastix command directory
     - `path_om_cmd`: Path to elastix command directory on the server
     - `path_om_scripts`: Path to directory to store scripts on the server
     - `path_dir_cmd_array`: Path to elastix array command directory
     - `path_om_cmd_array`: Path to elastix array command directory on the server
     - `path_om_log`: Path to log file on server
+    - `path_om_tmp`: Path to temporary directory on server
     - `path_om_env`: Path to script to set environment variables
     - `path_run_elastix`: Path to script that runs elastix given command on the server
     - `path_elastix`: Path to elastix executable on the server
@@ -22,10 +23,11 @@ WARNING: This program can permanently delete data if run with incorrect argument
     - `server_dtn`: Address of server to transfer data to
     - `user`: Username on server
     - `array_size`: Size of `sbatch` array to use
+    - `partition`: Priority of jobs on `sbatch`
 
 - `data_dir_remote::String`: Working directory of data on the remote server.
 - `img_prefix::String`: image prefix not including the timestamp. It is assumed that each frame's filename 
-    will be, eg, `img_prefix_t0123_ch2.mhd` for frame 123 with channel=2.
+    will be, eg, `img_prefix_t0123_ch2.nrrd` for frame 123 with channel=2.
 - `parameter_files::Array{String,1}`: List of parameter files for elastix to use, in order of their application, 
     as stored on the remote server. These parameter files are NOT assumed to be in the working directory.
 - `channel::Integer`: The channel to use for registration.
@@ -37,13 +39,14 @@ WARNING: This program can permanently delete data if run with incorrect argument
  - `cpu_per_task_key::String`: Key in `param` to CPU cores per elastix task. Default `cpu_per_task`
  - `memory_key::String`: Key in `param` to memory per elastix task. Default `memory`
  - `duration_key::String`: Key in `param` to the duration of each elastix task. Default `duration`
+ - `duration_julia_key::String`: Key in `param` to the duration of the Julia script that runs all elastix task. Default `duration_julia`
  - `job_name_key::String`: Key in `param` to the name of the elastix tasks. Default `job_name`
  - `fixed_channel_key::String`: Key in `param` to the fixed channel. Default `ch_marker`
  - `moving_channel_key::String`: Key in `param` to the moving channel. Default `ch_marker`
  - `head_dir_key::String`: Key in `param_path_*` to the head position of the worm. Default `path_head_pos`
  - `om_data_key::String`: Key in `param_path_*` to the path to sync the data on the server. Default `path_om_data`
- - `MHD_dir_key::String`: Key in `param_path_*` to the path to the MHD files. Default `path_dir_mhd_filt`
- - `MHD_om_dir_key::String`: Key in `param_path_*` to the path to the MHD files on the server. Default `path_om_mhd_filt`
+ - `NRRD_dir_key::String`: Key in `param_path_*` to the path to the NRRD files. Default `path_dir_nrrd_filt`
+ - `NRRD_om_dir_key::String`: Key in `param_path_*` to the path to the NRRD files on the server. Default `path_om_nrrd_filt`
  - `mask_dir_key::String`: Key in `param_path_*` to the mask path. Default `path_dir_mask`
  - `mask_om_dir_key::String`: Key in `param_path_*` to the mask path on the server. Default `path_om_mask`
  - `reg_dir_key::String`: Key in `param_path_*` to the registration output directory. Default `path_dir_reg`
@@ -56,14 +59,15 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         cpu_per_task_key::String="cpu_per_task", 
         memory_key::String="memory", 
         duration_key::String="duration",
+        duration_julia_key::String="duration_julia",
         job_name_key::String="job_name",
         fixed_channel_key::String="ch_marker",
         moving_channel_key::String="ch_marker",
         head_dir_key::String="path_head_pos",
         om_data_key::String="path_om_data",
         om_scripts_key::String="path_om_scripts",
-        MHD_dir_key::String="path_dir_mhd_filt",
-        MHD_om_dir_key::String="path_om_mhd_filt",
+        nrrd_dir_key::String="path_dir_nrrd_filt",
+        nrrd_om_dir_key::String="path_om_nrrd_filt",
         mask_dir_key::String="path_dir_mask",
         mask_om_dir_key::String="path_om_mask",
         reg_dir_key::String="path_dir_reg",
@@ -74,10 +78,10 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     script_dir_remote = param_path_fixed[om_scripts_key]
     data_dir_remote = param_path_fixed[om_data_key]
     data_dir_remote_moving = param_path_moving[om_data_key]
-    MHD_dir_local = param_path_fixed[MHD_dir_key]
-    MHD_dir_local_moving = param_path_moving[MHD_dir_key]
-    MHD_dir_remote = param_path_fixed[MHD_om_dir_key]
-    MHD_dir_remote_moving = param_path_moving[MHD_om_dir_key]
+    nrrd_dir_local = param_path_fixed[nrrd_dir_key]
+    nrrd_dir_local_moving = param_path_moving[nrrd_dir_key]
+    nrrd_dir_remote = param_path_fixed[nrrd_om_dir_key]
+    nrrd_dir_remote_moving = param_path_moving[nrrd_om_dir_key]
     mask_dir_local = param_path_fixed[mask_dir_key]
     mask_dir_local_moving = param_path_moving[mask_dir_key]
     mask_dir_remote = param_path_fixed[mask_om_dir_key]
@@ -105,6 +109,8 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     cpu_per_task = param[cpu_per_task_key]
     mem = param[memory_key]
     duration = param[duration_key]
+    duration_julia = param[duration_julia_key]
+
     fixed_channel = param[fixed_channel_key]
     moving_channel = param[moving_channel_key]
     job_name = param[job_name_key]
@@ -113,6 +119,10 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     server = param["server_dtn"]
     user = param["user"]
     array_size = param["array_size"]
+
+    temp_dir = param_path_fixed["path_om_tmp"]
+    temp_file = joinpath(temp_dir, "elx_commands.txt")
+    partition = param["partition"]
 
 
     # erase previous scripts and replace them with new ones
@@ -126,6 +136,8 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     create_dir(cmd_dir_local)
     create_dir(cmd_dir_array_local)
     duration_str = Dates.format(duration, "HH:MM:SS")
+    duration_julia_str = duration_julia
+
 
     # Euler registration requires knowing worm head location
     use_euler = (head_rotate_path !== nothing)
@@ -199,8 +211,8 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         # Euler registration
         if use_euler
             script_str *= "python $(head_rotate_path)"*
-                " "*joinpath(MHD_dir_remote, get_basename(edge[2], fixed_channel)*".mhd")*
-                " "*joinpath(MHD_dir_remote_moving, get_basename_moving(edge[1], moving_channel)*".mhd")*
+                " "*joinpath(nrrd_dir_remote, get_basename(edge[2], fixed_channel)*".nrrd")*
+                " "*joinpath(nrrd_dir_remote_moving, get_basename_moving(edge[1], moving_channel)*".nrrd")*
                 " "*joinpath(reg_dir_remote, dir, "$(dir)_euler.txt")*
                 " $(head_pos[edge[2]][1]),$(head_pos[edge[2]][2])"*
                 " $(head_pos_moving[edge[1]][1]),$(head_pos_moving[edge[1]][2]) > $(joinpath(reg_dir_remote, dir, euler_logfile))\n"
@@ -208,13 +220,13 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         
         # elastix image and output parameters
         script_str *= elastix_path*
-            " -f "*joinpath(MHD_dir_remote, get_basename(edge[2], fixed_channel)*".mhd")*
-            " -m "*joinpath(MHD_dir_remote_moving, get_basename_moving(edge[1], moving_channel)*".mhd")*
+            " -f "*joinpath(nrrd_dir_remote, get_basename(edge[2], fixed_channel)*".nrrd")*
+            " -m "*joinpath(nrrd_dir_remote_moving, get_basename_moving(edge[1], moving_channel)*".nrrd")*
             " -out "*joinpath(reg_dir_remote, dir)
         # mask parameters
         if mask_dir_local !== nothing
-            script_str *= " -fMask "*joinpath(mask_dir_remote, get_basename(edge[2], fixed_channel)*".mhd")*
-            " -mMask "*joinpath(mask_dir_remote_moving, get_basename_moving(edge[1], moving_channel)*".mhd")
+            script_str *= " -fMask "*joinpath(mask_dir_remote, get_basename(edge[2], fixed_channel)*".nrrd")*
+            " -mMask "*joinpath(mask_dir_remote_moving, get_basename_moving(edge[1], moving_channel)*".nrrd")
         end
         # initial condition parameters
         if use_euler
@@ -232,6 +244,24 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         end
     end
 
+    # write sbatch script to run Julia script
+    julia_sbatch_str = replace("#!/bin/bash
+                #SBATCH --job-name=julia_run_elx
+                #SBATCH --output=$(log_dir)/julia_run_elx.txt
+                #SBATCH --nodes=1
+                #SBATCH --ntasks=1
+                #SBATCH --cpus-per-task=1
+                #SBATCH --time=$(duration_julia_str)
+                #SBATCH --mem=$(mem)G
+                
+                julia -e \"using SLURMManager; submit_scripts(\\\"$(temp_file)\\\", partition=\\\"$(partition)\\\")\"\n", "    " => "")
+
+    julia_sbatch_file = joinpath(param_path_fixed["path_root_process"], "run_elastix_julia.sh")
+
+    open(julia_sbatch_file, "w") do f
+        write(f, julia_sbatch_str)
+    end
+
     println("Syncing data to server...")
     # make necessary directories on server
     run(`ssh $(user)@$(server) "mkdir -p $(data_dir_remote)"`)
@@ -241,6 +271,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     reg = reg_dir_remote
     run(`ssh $(user)@$(server) "mkdir -p $(reg)"`)
     # sync all data to the server
+    run(Cmd(["rsync", julia_sbatch_file, "$(user)@$(server):"*data_dir_remote]))
     if clear_cmd_dir
         run(Cmd(["rsync", "-r", "--delete", cmd_dir_local*"/", "$(user)@$(server):"*cmd_dir_remote]))
         if cmd_dir_array_local !== nothing
@@ -252,9 +283,9 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
             run(Cmd(["rsync", "-r", cmd_dir_array_local*"/", "$(user)@$(server):"*cmd_dir_array_remote]))
         end
     end
-    run(Cmd(["rsync", "-r", MHD_dir_local*"/", "$(user)@$(server):"*MHD_dir_remote]))
+    run(Cmd(["rsync", "-r", nrrd_dir_local*"/", "$(user)@$(server):"*nrrd_dir_remote]))
     if param_path_fixed != param_path_moving
-        run(Cmd(["rsync", "-r", "--delete", MHD_dir_local_moving*"/", "$(user)@$(server):"*MHD_dir_remote_moving]))
+        run(Cmd(["rsync", "-r", "--delete", nrrd_dir_local_moving*"/", "$(user)@$(server):"*nrrd_dir_remote_moving]))
     end
     if mask_dir_local !== nothing
         run(Cmd(["rsync", "-r", "--delete", mask_dir_local*"/", "$(user)@$(server):"*mask_dir_remote]))
@@ -269,6 +300,7 @@ end
 """
 Runs elastix on OpenMind. Requires `julia` to be installed under the relevant username and activated in the default ssh shell.
 Note that you cannot have multiple instances of this command running simultaneously with the same `temp_dir`.
+Returns the jobid of the Julia script-submission job.
 
 # Arguments
 - `param_path::Dict`: Dictionary of parameter paths including:
@@ -292,12 +324,20 @@ function run_elastix_openmind(param_path::Dict, param::Dict)
     user = param["user"]
     server = param["server"]
     partition = param["partition"]
+    run_elastix_julia_path = joinpath(param_path["path_om_data"], "run_elastix_julia.sh")
     run(`ssh $(user)@$(server) "mkdir -p $(temp_dir)"`)
     run(`ssh $(user)@$(server) "rm -f $(all_temp_files)"`)
     run(`ssh $(user)@$(server) "ls -d $(all_script_files) > $(temp_file)"`)
-    run(`ssh $(user)@$(server) "julia -e \"using SLURMManager; submit_scripts(\\\"$(temp_file)\\\", partition=\\\"$(partition)\\\")\""`)
+    return squeue_submit_sbatch_remote(param, run_elastix_julia_path)
 end
 
+
+function squeue_submit_sbatch_remote(param, path_sh; partition="normal")
+    user = param["user"]
+    server = param["server"]
+    jobid = run_parse_int(pipeline(`ssh $(user)@$(server) "sbatch --partition=$(partition) $path_sh"`, `awk '{ print $4 }'`))
+    return jobid
+end
 
 """
 Gets the number of running and pending `squeue` commands from the given user.
@@ -315,6 +355,48 @@ function get_squeue_status(param::Dict)
     return running + pending
 end
 
+
+"""
+Gets the number of running and pending `squeue` commands from the given user.
+
+# Arguments
+- `param::Dict`: Parameter dictionary including:
+    - `user`: Username on OpenMind
+    - `server`: Login node address on OpenMind
+- `jobid::Int`: Sbatch job ID of the Julia script-submission script
+"""
+function get_squeue_status(param::Dict, jobid::Int)
+    user = param["user"]
+    server = param["server"]
+    running = run_parse_int(pipeline(`ssh $(user)@$(server) "julia -e \"using SLURMManager; println(squeue_n_running($(jobid)))\""`))
+    pending = run_parse_int(pipeline(`ssh $(user)@$(server) "julia -e \"using SLURMManager; println(squeue_n_pending($(jobid)))\""`))
+    return running + pending
+end
+
+"""
+Get a lock in `param_path[lock_key]`. Wait a minimum of `param["lock_wait"]` between successive lock checks.
+"""
+function get_lock(param_path::Dict, param::Dict; lock_key::String="path_dir_lock")
+    while length(readdir(param_path[lock_key])) > 0
+        sleep(rand() + param["lock_wait"])
+    end
+    touch(joinpath(param_path[lock_key], split(param_path["path_root_process"], "/")[end]*".lock"))
+
+    # check for failed race condition
+    sleep(rand() + param["lock_wait"])
+    if length(readdir(param_path[lock_key])) > 1
+        release_lock(param_path, param; lock_key=lock_key)
+        get_lock(param_path, param; lock_key=lock_key)
+    end
+end
+
+"""
+Release a lock in `param_path[lock_key]`.
+"""
+function release_lock(param_path::Dict, param::Dict; lock_key::String="path_dir_lock")
+    rm(joinpath(param_path[lock_key], split(param_path["path_root_process"], "/")[end]*".lock"))
+end
+
 """
 This function stalls until all the user's jobs on OpenMind are completed.
 
@@ -330,11 +412,24 @@ function wait_for_elastix(param::Dict)
     end
 end
 
+"""
+This function stalls until the specified job is completed.
 
-### CONTINUE FROM HERE
+# Arguments
+- `param::Dict`: Parameter dictionary including:
+    - `user`: Username on OpenMind
+    - `server`: Login node address on OpenMind
+    - `elx_wait_delay`: Time to wait between checking whether elastix is done, in seconds
+- `jobid::Int`: Sbatch job ID of the Julia script-submission script
+"""
+function wait_for_elastix(param::Dict, jobid::Int)
+    while get_squeue_status(param, jobid) > 0
+        sleep(param["elx_wait_delay"])
+    end
+end
 
 """
-Syncs registration data from a remote compute server back to the local computer.
+Deletes unnecessary files, then syncs registration data from a remote compute server back to the local computer.
 
 # Arguments
 
@@ -351,6 +446,12 @@ function sync_registered_data(param_path::Dict, param::Dict; reg_dir_key::String
     user = param["user"]
     server = param["server_dtn"]
     reg_dir_remote = param_path[reg_om_dir_key]
+
+    # delete unnecessary files
+    run(`ssh $(user)@$(server) "find $(reg_dir_remote) -name IterationInfo* -delete"`)
+    run(`ssh $(user)@$(server) "find $(reg_dir_remote) -name elastix.log -delete"`)
+    
+    # sync remaining files
     run(Cmd(["rsync", "-r", "$(user)@$(server):"*reg_dir_remote*"/", reg_dir_local]))
 end
 
