@@ -20,7 +20,7 @@ function generate_elastix_difficulty(path_elastix_difficulty::String, t_range, h
                 difficulty[i, j] = heuristic(t1, t2)
             end
         else
-            Threads.@threads for j=i+1:length(t_range)
+            for j=i+1:length(t_range)
                 t2 = t_range[j]
                 difficulty[i, j] = heuristic(t1, t2)
             end
