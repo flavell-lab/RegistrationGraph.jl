@@ -529,7 +529,7 @@ function average_am_registrations(t_range, param_path::Dict;
     path_min_t_transform_avg = joinpath(param_path[reg_dir_key], "$(min_t)to$(min_t)", param_path[transform_avg_key])
 
     modify_parameter_file(joinpath(param_path[reg_dir_key], "$(min_t)to$(min_t)", param_path[transform_key]),
-        path_min_t_transform_avg, Dict(param_path["key_transform_parameters"] => params_avg_str); is_universal=false)
+        path_min_t_transform_avg, Dict(param_path[key_param_key] => params_avg_str); is_universal=false)
     @showprogress for t in t_range
         if t == min_t
             continue
