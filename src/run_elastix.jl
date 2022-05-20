@@ -195,7 +195,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
                 end
                 script_list_file = joinpath(cmd_dir_remote, "$(job_name)_$(count).txt")
                 array_str *= "$(run_elx_command) $(script_list_file) \$SLURM_ARRAY_TASK_ID\n"
-                write_txt(joinpath(cmd_dir_local, "$(job_name)_$(count).txt"), reduce((x,y)->x*"\n"*y, edges_in_arr))
+                write_txt(joinpath(cmd_dir_local, "$(job_name)_$(count).txt"), reduce((x,y)->x*"\n"*y, edges_in_arr)*"\n")
                 write_txt(joinpath(cmd_dir_array_local, "$(job_name)_$(count).sh"), array_str)
                 count += 1
                 edges_in_arr = []
