@@ -330,23 +330,28 @@ Returns the jobid of the Julia script-submission job.
     - `user`: OpenMind username
     - `server`: Login node address on OpenMind
     - `partition`: Partition to run elastix using (eg `use-everything`)
+- `extra_cmd_paths` (optional, default `[]`): Extra paths to script files to run 
 """
-function run_elastix_openmind(param_path::Dict, param::Dict)
+function run_elastix_openmind(param_path::Dict, param::Dict; extra_cmd_paths=[])
     temp_dir = param_path["path_om_tmp"]
     temp_file = joinpath(temp_dir, "elx_commands.txt")
     all_temp_files = joinpath(temp_dir, "*")
-    cmd_path = param_path["path_om_cmd"]
+    cmd_path = [param_path["path_om_cmd"]]
     if param_path["path_om_cmd_array"] !== nothing
-        cmd_path = param_path["path_om_cmd_array"]
+        cmd_path = [param_path["path_om_cmd_array"]]
     end
-    all_script_files = joinpath(cmd_path, "*")
+    append!(cmd_path, extra_cmd_paths)
+    all_script_files = joinpath.(cmd_path, "*")
     user = param["user"]
     server = param["server"]
     partition = param["partition"]
     run_elastix_julia_path = joinpath(param_path["path_om_data"], "run_elastix_julia.sh")
     run(`ssh $(user)@$(server) "mkdir -p $(temp_dir)"`)
     run(`ssh $(user)@$(server) "rm -f $(all_temp_files)"`)
-    run(`ssh $(user)@$(server) "ls -d $(all_script_files) > $(temp_file)"`)
+    run(`ssh $(user)@$(server) "ls -d $(all_script_files[1]) > $(temp_file)"`)
+    for i=2:length(all_script_files)
+        run(`ssh $(user)@$(server) "ls -d $(all_script_files[i]) >> $(temp_file)"`)
+    end
     return squeue_submit_sbatch_remote(param, run_elastix_julia_path)
 end
 
