@@ -73,7 +73,11 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         reg_dir_key::String="path_dir_reg",
         reg_om_dir_key::String="path_om_reg",
         path_head_rotate_key::String="path_head_rotate",
-        parameter_files_key::String="parameter_files")
+        parameter_files_key::String="parameter_files",
+        cmd_dir_key::String="path_dir_cmd",
+        cmd_om_key::String="path_om_cmd",
+        cmd_array_dir_key::String="path_dir_cmd_array",
+        cmd_array_om_key::String="path_dir_cmd_array")
 
     script_dir_remote = param_path_fixed[om_scripts_key]
     data_dir_remote = param_path_fixed[om_data_key]
@@ -94,10 +98,10 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     get_basename = param_path_fixed["get_basename"]
     get_basename_moving = param_path_moving["get_basename"]
 
-    cmd_dir_local = param_path_fixed["path_dir_cmd"]
-    cmd_dir_remote = param_path_fixed["path_om_cmd"]
-    cmd_dir_array_local = param_path_fixed["path_dir_cmd_array"]
-    cmd_dir_array_remote = param_path_fixed["path_om_cmd_array"]
+    cmd_dir_local = param_path_fixed[cmd_dir_key]
+    cmd_dir_remote = param_path_fixed[cmd_om_key]
+    cmd_dir_array_local = param_path_fixed[cmd_array_dir_key]
+    cmd_dir_array_remote = param_path_fixed[cmd_array_om_key]
     head_rotate_path = param_path_fixed[path_head_rotate_key]
     log_dir = param_path_fixed["path_om_log"]
     run_elx_command = param_path_fixed["path_run_elastix"]
