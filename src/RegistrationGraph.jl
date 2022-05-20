@@ -41,5 +41,6 @@ export
     get_squeue_status,
     wait_for_elastix,
     get_lock,
-    release_lock
+    release_lock,
+    average_registered_images
 end # module

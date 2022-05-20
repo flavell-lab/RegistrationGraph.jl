@@ -295,7 +295,26 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     end
 end
 
-
+"""
+Averages all registered images, assuming they are all being registered to the same time point.
+# Arguments:
+- `reg_dir`: Registration directory that contains all the moving images registered to the fixed image.
+- `central_nrrd_path`: Path to fixed image.
+- `registration_problems`: List of registration problems of the moving images to the fixed image.
+- `res_name`: Name of registration file (ie: resolution) to use.
+"""
+function average_registered_images(reg_dir, central_nrrd_path, registration_problems, res_name)
+    imgs = [Int64.(read_img(NRRD(central_nrrd_path)))]
+    @showprogress for (p1, p2) in registration_problems
+        try
+            push!(imgs, Int64.(read_img(NRRD(joinpath(reg_dir, "$(p1)to$(p2)", res_name)))))
+        catch e
+            @warn("Registration $(p1), $(p2) failed")
+        end
+    end
+    return sum(imgs) / length(imgs)
+end
+        
 
 """
 Runs elastix on OpenMind. Requires `julia` to be installed under the relevant username and activated in the default ssh shell.
