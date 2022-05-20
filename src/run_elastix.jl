@@ -77,7 +77,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         cmd_dir_key::String="path_dir_cmd",
         cmd_om_key::String="path_om_cmd",
         cmd_array_dir_key::String="path_dir_cmd_array",
-        cmd_array_om_key::String="path_dir_cmd_array")
+        cmd_array_om_key::String="path_dir_om_array")
 
     script_dir_remote = param_path_fixed[om_scripts_key]
     data_dir_remote = param_path_fixed[om_data_key]
