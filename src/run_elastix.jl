@@ -299,6 +299,38 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     end
 end
 
+
+"""
+Runs elastix registration locally, for NeuroPAL.
+
+# Arguments:
+- `param_path`: Dictionary containing the keys below.
+- `path_img_fixed`: Path to fixed image.
+- `path_img_moving`: Path to moving image.
+- `reg_dir_key` (optional, default `path_dir_reg_neuropal`): Path to registration output directory.
+- `elastix_key` (optional, default `path_elastix_local`): Path to `elastix` executable.
+- `parameter_files_key` (optional, default `parameter_files_local`): Array of paths to parameter files.
+"""
+function run_registration(param_path, path_img_fixed, path_img_moving; reg_dir_key="path_dir_reg_neuropal",
+        elastix_key="path_elastix_local", parameter_files_key="parameter_files_local")
+    reg_dir = param_path[reg_dir_key]
+    path_elastix = param_path[elastix_key]
+    
+    cmd_arr = [path_elastix]
+    push!(cmd_arr, "-f")
+    push!(cmd_arr, path_img_fixed)
+    push!(cmd_arr, "-m")
+    push!(cmd_arr, path_img_moving)
+    push!(cmd_arr, "-out")
+    push!(cmd_arr, reg_dir)
+    for p in param_path[parameter_files_key]
+        push!(cmd_arr, "-p")
+        push!(cmd_arr, p)
+    end
+
+    run(Cmd(cmd_arr));
+end
+
 """
 Averages all registered images, assuming they are all being registered to the same time point.
 # Arguments:

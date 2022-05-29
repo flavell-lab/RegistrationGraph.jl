@@ -15,6 +15,7 @@ export
     generate_elastix_difficulty,
     make_quality_dict,
     write_sbatch_graph,
+    run_registration,
     load_graph,
     to_dict,
     remove_frame,
