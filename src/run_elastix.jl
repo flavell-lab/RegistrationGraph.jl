@@ -310,10 +310,10 @@ Runs elastix registration locally, for NeuroPAL.
 - `reg_dir_key` (optional, default `path_dir_reg_neuropal`): Path to registration output directory.
 - `elastix_key` (optional, default `path_elastix_local`): Path to `elastix` executable.
 - `parameter_files_key` (optional, default `parameter_files_local`): Array of paths to parameter files.
-- `init_param_file` (optional, default `nothing`): Initial parameter file.
+- `init_param_file_key` (optional, default `nothing`): Initial parameter file.
 """
 function run_registration(param_path, path_img_fixed, path_img_moving; reg_dir_key="path_dir_reg_neuropal",
-        elastix_key="path_elastix_local", parameter_files_key="parameter_files_local", init_param_file=nothing)
+        elastix_key="path_elastix_local", parameter_files_key="parameter_files_local", init_param_file_key=nothing)
     reg_dir = param_path[reg_dir_key]
     path_elastix = param_path[elastix_key]
     
@@ -329,9 +329,9 @@ function run_registration(param_path, path_img_fixed, path_img_moving; reg_dir_k
         push!(cmd_arr, p)
     end
 
-    if !isnothing(init_param_file)
+    if !isnothing(init_param_file_key)
         push!(cmd_arr, "-t0")
-        push!(cmd_arr, init_param_file)
+        push!(cmd_arr, param_path[init_param_file])
     end
 
     run(Cmd(cmd_arr));
