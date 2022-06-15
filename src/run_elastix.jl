@@ -331,7 +331,7 @@ function run_registration(param_path, path_img_fixed, path_img_moving; reg_dir_k
 
     if !isnothing(init_param_file_key)
         push!(cmd_arr, "-t0")
-        push!(cmd_arr, param_path[init_param_file])
+        push!(cmd_arr, param_path[init_param_file_key])
     end
 
     run(Cmd(cmd_arr));
