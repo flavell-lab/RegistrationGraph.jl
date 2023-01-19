@@ -73,7 +73,11 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         reg_dir_key::String="path_dir_reg",
         reg_om_dir_key::String="path_om_reg",
         path_head_rotate_key::String="path_head_rotate",
-        parameter_files_key::String="parameter_files")
+        parameter_files_key::String="parameter_files",
+        cmd_dir_key::String="path_dir_cmd",
+        cmd_om_key::String="path_om_cmd",
+        cmd_array_dir_key::String="path_dir_cmd_array",
+        cmd_array_om_key::String="path_om_cmd_array")
 
     script_dir_remote = param_path_fixed[om_scripts_key]
     data_dir_remote = param_path_fixed[om_data_key]
@@ -94,10 +98,10 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
     get_basename = param_path_fixed["get_basename"]
     get_basename_moving = param_path_moving["get_basename"]
 
-    cmd_dir_local = param_path_fixed["path_dir_cmd"]
-    cmd_dir_remote = param_path_fixed["path_om_cmd"]
-    cmd_dir_array_local = param_path_fixed["path_dir_cmd_array"]
-    cmd_dir_array_remote = param_path_fixed["path_om_cmd_array"]
+    cmd_dir_local = param_path_fixed[cmd_dir_key]
+    cmd_dir_remote = param_path_fixed[cmd_om_key]
+    cmd_dir_array_local = param_path_fixed[cmd_array_dir_key]
+    cmd_dir_array_remote = param_path_fixed[cmd_array_om_key]
     head_rotate_path = param_path_fixed[path_head_rotate_key]
     log_dir = param_path_fixed["path_om_log"]
     run_elx_command = param_path_fixed["path_run_elastix"]
@@ -195,7 +199,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
                 end
                 script_list_file = joinpath(cmd_dir_remote, "$(job_name)_$(count).txt")
                 array_str *= "$(run_elx_command) $(script_list_file) \$SLURM_ARRAY_TASK_ID\n"
-                write_txt(joinpath(cmd_dir_local, "$(job_name)_$(count).txt"), reduce((x,y)->x*"\n"*y, edges_in_arr))
+                write_txt(joinpath(cmd_dir_local, "$(job_name)_$(count).txt"), reduce((x,y)->x*"\n"*y, edges_in_arr)*"\n")
                 write_txt(joinpath(cmd_dir_array_local, "$(job_name)_$(count).sh"), array_str)
                 count += 1
                 edges_in_arr = []
@@ -296,6 +300,63 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
 end
 
 
+"""
+Runs elastix registration locally, for NeuroPAL.
+
+# Arguments:
+- `param_path`: Dictionary containing the keys below.
+- `path_img_fixed`: Path to fixed image.
+- `path_img_moving`: Path to moving image.
+- `reg_dir_key` (optional, default `path_dir_reg_neuropal`): Path to registration output directory.
+- `elastix_key` (optional, default `path_elastix_local`): Path to `elastix` executable.
+- `parameter_files_key` (optional, default `parameter_files_local`): Array of paths to parameter files.
+- `init_param_file_key` (optional, default `nothing`): Initial parameter file.
+"""
+function run_registration(param_path, path_img_fixed, path_img_moving; reg_dir_key="path_dir_reg_neuropal",
+        elastix_key="path_elastix_local", parameter_files_key="parameter_files_local", init_param_file_key=nothing)
+    reg_dir = param_path[reg_dir_key]
+    path_elastix = param_path[elastix_key]
+    
+    cmd_arr = [path_elastix]
+    push!(cmd_arr, "-f")
+    push!(cmd_arr, path_img_fixed)
+    push!(cmd_arr, "-m")
+    push!(cmd_arr, path_img_moving)
+    push!(cmd_arr, "-out")
+    push!(cmd_arr, reg_dir)
+    for p in param_path[parameter_files_key]
+        push!(cmd_arr, "-p")
+        push!(cmd_arr, p)
+    end
+
+    if !isnothing(init_param_file_key)
+        push!(cmd_arr, "-t0")
+        push!(cmd_arr, param_path[init_param_file_key])
+    end
+
+    run(Cmd(cmd_arr));
+end
+
+"""
+Averages all registered images, assuming they are all being registered to the same time point.
+# Arguments:
+- `reg_dir`: Registration directory that contains all the moving images registered to the fixed image.
+- `central_nrrd_path`: Path to fixed image.
+- `registration_problems`: List of registration problems of the moving images to the fixed image.
+- `res_name`: Name of registration file (ie: resolution) to use.
+"""
+function average_registered_images(reg_dir, central_nrrd_path, registration_problems, res_name)
+    imgs = [Int64.(read_img(NRRD(central_nrrd_path)))]
+    @showprogress for (p1, p2) in registration_problems
+        try
+            push!(imgs, Int64.(read_img(NRRD(joinpath(reg_dir, "$(p1)to$(p2)", res_name)))))
+        catch e
+            @warn("Registration $(p1), $(p2) failed")
+        end
+    end
+    return sum(imgs) / length(imgs)
+end
+        
 
 """
 Runs elastix on OpenMind. Requires `julia` to be installed under the relevant username and activated in the default ssh shell.
@@ -311,23 +372,28 @@ Returns the jobid of the Julia script-submission job.
     - `user`: OpenMind username
     - `server`: Login node address on OpenMind
     - `partition`: Partition to run elastix using (eg `use-everything`)
+- `extra_cmd_paths` (optional, default `[]`): Extra paths to script files to run 
 """
-function run_elastix_openmind(param_path::Dict, param::Dict)
+function run_elastix_openmind(param_path::Dict, param::Dict; extra_cmd_paths=[])
     temp_dir = param_path["path_om_tmp"]
     temp_file = joinpath(temp_dir, "elx_commands.txt")
     all_temp_files = joinpath(temp_dir, "*")
-    cmd_path = param_path["path_om_cmd"]
+    cmd_path = [param_path["path_om_cmd"]]
     if param_path["path_om_cmd_array"] !== nothing
-        cmd_path = param_path["path_om_cmd_array"]
+        cmd_path = [param_path["path_om_cmd_array"]]
     end
-    all_script_files = joinpath(cmd_path, "*")
+    append!(cmd_path, extra_cmd_paths)
+    all_script_files = joinpath.(cmd_path, "*")
     user = param["user"]
     server = param["server"]
     partition = param["partition"]
     run_elastix_julia_path = joinpath(param_path["path_om_data"], "run_elastix_julia.sh")
     run(`ssh $(user)@$(server) "mkdir -p $(temp_dir)"`)
     run(`ssh $(user)@$(server) "rm -f $(all_temp_files)"`)
-    run(`ssh $(user)@$(server) "ls -d $(all_script_files) > $(temp_file)"`)
+    run(`ssh $(user)@$(server) "ls -d $(all_script_files[1]) > $(temp_file)"`)
+    for i=2:length(all_script_files)
+        run(`ssh $(user)@$(server) "ls -d $(all_script_files[i]) >> $(temp_file)"`)
+    end
     return squeue_submit_sbatch_remote(param, run_elastix_julia_path)
 end
 

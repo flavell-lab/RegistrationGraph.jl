@@ -15,6 +15,7 @@ export
     generate_elastix_difficulty,
     make_quality_dict,
     write_sbatch_graph,
+    run_registration,
     load_graph,
     to_dict,
     remove_frame,
@@ -41,5 +42,6 @@ export
     get_squeue_status,
     wait_for_elastix,
     get_lock,
-    release_lock
+    release_lock,
+    average_registered_images
 end # module
