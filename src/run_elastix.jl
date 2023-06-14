@@ -394,7 +394,7 @@ function run_elastix_openmind(param_path::Dict, param::Dict; extra_cmd_paths=[])
     for i=2:length(all_script_files)
         run(`ssh $(user)@$(server) "ls -d $(all_script_files[i]) >> $(temp_file)"`)
     end
-    return squeue_submit_sbatch_remote(param, run_elastix_julia_path)
+    return squeue_submit_sbatch_remote(param, run_elastix_julia_path, partition="flavell")
 end
 
 
