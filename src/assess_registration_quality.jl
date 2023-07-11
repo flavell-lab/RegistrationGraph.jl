@@ -15,7 +15,7 @@ It is assumed that smaller values are better for the metrics.
 - `resolutions`: an array of resolution values to be using. Each value is represented as a tuple `(i,j)`, where `i` is the number of parameter file
     to use and `j` is the resolution for registrations using that parameter file. Both are 0-indexed.
 ## Optional Keyword Arguments
-- `mask_dir::String`: directory to a mask file. Statistics will not be computed on regions outside the mask.
+- `mask_dir::Union{String,Nothing}`: directory to a mask file. Statistics will not be computed on regions outside the mask.
     If left blank, no mask will be used or passed to the evaluation functions.
 """
 function make_quality_dict(problems, evaluation_functions::Dict, selection_metric::String, resolutions; mask_dir::Union{String,Nothing}=nothing)

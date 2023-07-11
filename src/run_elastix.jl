@@ -53,14 +53,6 @@ WARNING: This program can permanently delete data if run with incorrect argument
     - `array_size`: Size of `sbatch` array to use
     - `partition`: Priority of jobs on `sbatch`
 
-- `data_dir_remote::String`: Working directory of data on the remote server.
-- `img_prefix::String`: image prefix not including the timestamp. It is assumed that each frame's filename 
-    will be, eg, `img_prefix_t0123_ch2.nrrd` for frame 123 with channel=2.
-- `parameter_files::Array{String,1}`: List of parameter files for elastix to use, in order of their application, 
-    as stored on the remote server. These parameter files are NOT assumed to be in the working directory.
-- `channel::Integer`: The channel to use for registration.
-- `user::String`: Username on the server
-
 ## Optional keyword arguments
 
  - `clear_cmd_dir::Bool`: Whether to clear the elastix command directory, useful if you are re-running registrations
@@ -73,14 +65,19 @@ WARNING: This program can permanently delete data if run with incorrect argument
  - `moving_channel_key::String`: Key in `param` to the moving channel. Default `ch_marker`
  - `head_dir_key::String`: Key in `param_path_*` to the head position of the worm. Default `path_head_pos`
  - `om_data_key::String`: Key in `param_path_*` to the path to sync the data on the server. Default `path_om_data`
- - `NRRD_dir_key::String`: Key in `param_path_*` to the path to the NRRD files. Default `path_dir_nrrd_filt`
- - `NRRD_om_dir_key::String`: Key in `param_path_*` to the path to the NRRD files on the server. Default `path_om_nrrd_filt`
+ - `om_scripts_key::String`: Key in `param_path_*` to the path to sync the scripts on the server. Default `path_om_scripts
+ - `nrrd_dir_key::String`: Key in `param_path_*` to the path to the NRRD files. Default `path_dir_nrrd_filt`
+ - `nrrd_om_dir_key::String`: Key in `param_path_*` to the path to the NRRD files on the server. Default `path_om_nrrd_filt`
  - `mask_dir_key::String`: Key in `param_path_*` to the mask path. Default `path_dir_mask`
  - `mask_om_dir_key::String`: Key in `param_path_*` to the mask path on the server. Default `path_om_mask`
  - `reg_dir_key::String`: Key in `param_path_*` to the registration output directory. Default `path_dir_reg`
  - `reg_om_dir_key::String`: Key in `param_path_*` to the registration output directory on the server. `path_om_reg`
  - `path_head_rotate_key::String`: Key in `param_path_fixed` to the path on the server to the head rotation python file. Default `path_head_rotate`
  - `parameter_files_key::String`: Key in `param_path_fixed` to the path on the server to the elastix parameter files. Default `parameter_files`
+ - `cmd_dir_key::String`: Key in `param_path_fixed` to the local path to store the `elastix` scripts. Default `path_dir_cmd`
+ - `cmd_om_key::String`: Key in `param_path_fixed` to the path on the server to store the `elastix` scripts. Default `path_om_cmd`
+ - `cmd_array_dir_key::String`: Key in `param_path_fixed` to the local path to store the `elastix` array scripts. Default `path_dir_cmd_array`
+ - `cmd_array_om_key::String`: Key in `param_path_fixed` to the path on the server to store the `elastix` array scripts. Default `path_om_cmd_array`
 """
 function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Dict, param::Dict;
         clear_cmd_dir::Bool=true,
