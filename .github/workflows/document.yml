@@ -93,7 +93,7 @@ jobs:
           Pkg.add("PyPlot");
           Pkg.build("PyPlot");'
       - name: Install matplotlib
-        run: julia -e 'using Conda; Conda.add("matplotlib");'
+        run: ~/.julia/conda/3/x86_64/bin/conda install matplotlib
       - name: Setup python packages
         run: ~/.julia/conda/3/x86_64/bin/pip install torch==1.13.1 torchvision torchaudio;
           cd unet2d;
