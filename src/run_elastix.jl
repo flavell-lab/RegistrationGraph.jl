@@ -28,7 +28,9 @@
 
 
 Syncs data from local computer to a remote server and creates command files for elastix on that server.
-WARNING: This program can permanently delete data if run with incorrect arguments.
+
+**WARNING:** This program can permanently delete data if run with incorrect arguments.
+
 # Arguments
 - `edges`: List of registration problems to perform
 - `param_path_fixed::Dict`: Dictionary containing paths for the fixed images including:
