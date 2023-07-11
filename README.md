@@ -1,8 +1,16 @@
 # RegistrationGraph.jl
 
+[![][docs-stable-img]][docs-stable-url] [![][docs-latest-img]][docs-latest-url]
+
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-stable-url]: https://flavell-lab.github.io/RegistrationGraph.jl/stable/
+
+[docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
+[docs-latest-url]: https://flavell-lab.github.io/RegistrationGraph.jl/dev/
+
+
 A collection of tools for running elastix registration. Suppose there is a set of N frames to be registered, but the frames are too dissimilar to be able to ensure a quality registration for each pair of frames. In this case, it is often helpful to generate a heuristic to evaluate how similar two frames are to each other (and hence, how likely elastix will be to succeed). Once such a heuristic can be determined, registration problems can be selected to minimize difficulty and maximum path length, as a graph optimization problem. This package provides several heuristics for various registration problems, graph theory solutions for constructing the registration problem graph, and automated syncing of scripts and data to the OpenMind server.
 
-The API is available [here](https://flavell-lab.github.io/RegistrationGraph.jl/dev/).
 
 ## Prerequisites
 
@@ -21,9 +29,9 @@ The package `WormFeatureDetector.jl` contains a variety of heuristics that can b
 
 ```julia
 # give the heuristic all its parameters in advance, so it's a function of just three arguments
-heur = (t1, t2) -> heuristic(t1, t2, params...)
+heur! = (t1, t2) -> heuristic(t1, t2, params...)
 # now compute elastix difficulty
-generate_elastix_difficulty("/path/to/elx_difficulty_output_file", 1:100, heur)
+generate_elastix_difficulty("/path/to/elx_difficulty_output_file", 1:100, heur!)
 ```
 
 ## Generating a registration problem graph
@@ -51,15 +59,8 @@ graph = load_graph("/path/to/data/elastix_difficulty.txt")
 graph = remove_frame(graph, 3)
 
 # generates set of registration problems from the graph
-# let's say we want at least 5 edges from each node
-subgraph = make_voting_subgraph(graph, 5)
-
-# plot the subgraph to visualize it
-# uses the GraphPlot package
-# isolated nodes are frames that will not be registered
-# NOTE: in Julia v1.4 and up, `gplot` loses the ability to plot weighted graphs
-# you will need to manually copy the graph to an unweighted graph for plotting
-gplot(subgraph, layout=spring_layout, arrowlengthfrac=0.03)
+# let's say we want at least 10 edges from each node
+subgraph = make_voting_subgraph(graph, 10)
 ```
 
 Once you're satisfied with the graph, you can save it:
@@ -107,8 +108,8 @@ The `make_quality_dict` function takes as input a list of metrics, and evaluates
 # because all input functions must have exactly the parameters moving, fixed, resolution
 # if you're using a mask, the keyword parameter mask_dir will also be provided to the function
 evaluation_functions = Dict()
-evaluation_functions["NCC"] = (moving, fixed, resolution) ->
-        metric_tfm(calculate_ncc(read_img(MHD(joinpath(param_path["path_dir_mhd_filt"], param_path["get_basename"](fixed, ch_marker)*".mhd"))), read_img(MHD(joinpath(param_path["path_dir_reg"], "$(moving)to$(fixed)", "result.$(resolution[1]).R$(resolution[2]).mhd")))), threshold=param["reg_quality_threshold"])
+evaluation_functions[param["quality_metric"]] = (moving, fixed, resolution) -> metric_tfm(calculate_ncc(read_img(NRRD(joinpath(path_fixed, param_path["get_basename"](fixed, param["ch_marker"])*".nrrd"))), read_img(NRRD(joinpath(param_path["path_dir_reg"], "$(moving)to$(fixed)", "result.$(resolution[1]).R$(resolution[2]).nrrd")))), threshold=param["reg_quality_threshold"])
+
 
 # now, compute and output quality dictionary
 q_dict, best_reg, q_dict_errors = make_quality_dict(param_path, param, problems, evaluation_functions)
@@ -116,16 +117,7 @@ q_dict, best_reg, q_dict_errors = make_quality_dict(param_path, param, problems,
 
 ## Visualizing registration
 
-The simplest way to visualize registration quality is by overlaying the moving and fixed images.
-The `make_diff_pngs` command creates a PNG file that does this:
-
-```julia
-fixed = 10
-moving = 5
-make_diff_pngs(param_path, param, get_basename, fixed, moving)
-```
-
-You can also directly compare an image to a registration-mapped image, together with their ROIs:
+You can directly compare an image to a registration-mapped image, together with their ROIs:
 
 ```julia
 # previously, load fixed and moving images and ROIs

@@ -22,11 +22,12 @@
 // In some cases, the direction cosines of the image are corrupt,
 // due to image format conversions for example. In that case, you 
 // may want to set this option to "false".
-// (UseDirectionCosines "true")
+(UseDirectionCosines "true")
 
 // **************** Main Components **************************
 
 // The following components should usually be left as they are:
+(Registration "MultiResolutionRegistration")
 (Interpolator "BSplineInterpolator")
 (ResampleInterpolator "FinalBSplineInterpolator")
 (Resampler "DefaultResampler")
@@ -48,7 +49,7 @@
 // quite ok in general. The Transform and Metric are important
 // and need to be chosen careful for each application. See manual.
 (Optimizer "AdaptiveStochasticGradientDescent")
-(Transform "EulerTransform")
+(Transform "AffineTransform")
 //(Metric "AdvancedMattesMutualInformation")
 (Metric "AdvancedNormalizedCorrelation")
 
@@ -83,8 +84,28 @@
 // If you do not use a mask, the option doesn't matter.
 (ErodeMask "false")
 
-// *** Optimizer ***
+// ******************** Multiresolution **********************
 
+// The number of resolutions. 1 Is only enough if the expected
+// deformations are small. 3 or 4 mostly works fine. For large
+// images and large deformations, 5 or 6 may even be useful.
+(NumberOfResolutions 3)
+
+// The downsampling/blurring factors for the image pyramids.
+// By default, the images are downsampled by a factor of 2
+// compared to the next resolution.
+// So, in 2D, with 4 resolutions, the following schedule is used:
+//(ImagePyramidSchedule 8 8  4 4  2 2  1 1 )
+// And in 3D:
+//(ImagePyramidSchedule 8 8 8  4 4 4  2 2 2  1 1 1 )
+// You can specify any schedule, for example:
+//(ImagePyramidSchedule 4 4  4 3  2 1  1 1 )
+// Make sure that the number of elements equals the number
+// of resolutions times the image dimension.
+
+// ******************* Optimizer ****************************
+
+// Maximum number of iterations in each resolution level:
 // 200-500 works usually fine for affine registration.
 // For more robustness, you may increase this to 1000-2000.
 (MaximumNumberOfIterations 2000)
@@ -102,7 +123,7 @@
 // With an AdaptiveStochasticGradientDescent optimizer,
 // in combination with the two options below, around 2000
 // samples may already suffice.
-(NumberOfSpatialSamples 50000)
+(NumberOfSpatialSamples 20000)
 (RequiredRatioOfValidSamples 0.1)
 
 // Refresh these spatial samples in every iteration, and select
@@ -128,14 +149,14 @@
 (FinalBSplineInterpolationOrder 3)
 
 //Default pixel value for pixels that come from outside the picture:
-(DefaultPixelValue 135)
+(DefaultPixelValue 124)
 
 // Choose whether to generate the deformed moving image.
 // You can save some time by setting this to false, if you are
 // only interested in the final (nonrigidly) deformed moving image
 // for example.
-(WriteResultImage "false")
-(WriteResultImageAfterEachResolution "false")
+(WriteResultImage "true")
+(WriteResultImageAfterEachResolution "true")
 
 // The pixel type and format of the resulting deformed moving image
 (ResultImagePixelType "short")

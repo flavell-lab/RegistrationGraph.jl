@@ -6,7 +6,7 @@
 
 // **************** Main Components **************************
 // (Registration "MultiResolutionRegistration")
-(Registration "MultiResolutionRegistration")
+(Registration "MultiMetricMultiResolutionRegistration")
 
 
 (Interpolator "BSplineInterpolator")
@@ -22,7 +22,9 @@
 (Optimizer "AdaptiveStochasticGradientDescent")
 (Transform "RecursiveBSplineTransform")
 // (Metric "AdvancedNormalizedCorrelation")
-(Metric "AdvancedNormalizedCorrelation")
+(Metric "AdvancedNormalizedCorrelation" "TransformBendingEnergyPenalty")
+(Metric0Weight 1)
+(Metric1Weight 1 3 5 10)
 
 // ***************** Transformation **************************
 (FinalGridSpacingInPhysicalUnits 1)

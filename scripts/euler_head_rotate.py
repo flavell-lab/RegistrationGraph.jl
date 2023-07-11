@@ -272,9 +272,9 @@ parameter_txt = "(Transform \"EulerTransform\")" + "\n" \
 "// Resampler specific" + "\n" \
 "(Resampler \"DefaultResampler\")" + "\n" \
 "(DefaultPixelValue 0.000000)" + "\n" \
-"(ResultImageFormat \"mhd\")" + "\n" \
+"(ResultImageFormat \"nrrd\")" + "\n" \
 "(ResultImagePixelType \"short\")" + "\n" \
-"(CompressResultImage \"false\")"
+"(CompressResultImage \"true\")"
 
 with open(tfm_path, "w") as f:
     f.write(parameter_txt)

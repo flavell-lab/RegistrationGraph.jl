@@ -15,7 +15,7 @@
 
 (FixedImagePyramid "FixedSmoothingImagePyramid")
 (MovingImagePyramid "MovingSmoothingImagePyramid")
-(ImagePyramidSchedule 0 0 0  0 0 0  0 0 0  0 0 0)
+(ImagePyramidSchedule 0 0 0  0 0 0)
 // (ImagePyramidSchedule  9 9 3  4.5 4.5 1.5 0 0 0)
 // (ImagePyramidSchedule 4.8 4.8 1.6  2.4 2.4 0.8  0 0 0)
 
@@ -26,11 +26,11 @@
 
 // ***************** Transformation **************************
 (FinalGridSpacingInPhysicalUnits 1)
-(GridSpacingSchedule 20  14  10  7)
+(GridSpacingSchedule 20  14)
 (HowToCombineTransforms "Compose")
 
 // ******************** Multiresolution **********************
-(NumberOfResolutions 4)
+(NumberOfResolutions 2)
 
 // ******************* Optimizer ****************************
 (MaximumNumberOfIterations 50000)

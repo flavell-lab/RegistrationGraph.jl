@@ -155,11 +155,10 @@
 // You can save some time by setting this to false, if you are
 // only interested in the final (nonrigidly) deformed moving image
 // for example.
-(WriteResultImage "true")
-(WriteResultImageAfterEachResolution "true")
+(WriteResultImage "false")
+(WriteResultImageAfterEachResolution "false")
 
 // The pixel type and format of the resulting deformed moving image
 (ResultImagePixelType "short")
-(ResultImageFormat "mhd")
-
-
+(ResultImageFormat "nrrd")
+(CompressResultImage "true")
