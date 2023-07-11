@@ -1,4 +1,6 @@
 """
+    calculate_ncc(moving, fixed)
+
 Computes the NCC of two image arrays `moving` and `fixed` corresponding to a registration.
 """
 function calculate_ncc(moving, fixed)
@@ -19,6 +21,8 @@ function calculate_ncc(moving, fixed)
 end
 
 """
+    metric_tfm(ncc; threshold=0.9)
+
 Applies a function to `ncc` to make it a cost that increases to infinity if `ncc` decreases below `threshold` (default 0.9)
 """
 function metric_tfm(ncc; threshold=0.9)

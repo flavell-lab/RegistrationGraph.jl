@@ -1,4 +1,6 @@
 """
+    make_quality_dict(problems, evaluation_functions::Dict, selection_metric::String, resolutions; mask_dir::Union{String,Nothing}=nothing)
+
 Computes the quality of registration using NCC, nearest-neighbors distance between centroids, and manual annotation.
 Returns a dictionary of registration quality values for each resolution, another dictionary of the best resolution for each problem,
 and a dictionary of registration resolutions that failed.
@@ -54,6 +56,8 @@ function make_quality_dict(problems, evaluation_functions::Dict, selection_metri
 end
 
 """
+    make_quality_dict(param_path::Dict, param::Dict, problems, evaluation_functions)
+
 Computes the quality of registration using NCC, nearest-neighbors distance between centroids, and manual annotation.
 Returns a dictionary of registration quality values for each resolution, another dictionary of the best resolution for each problem,
 and a dictionary of registration resolutions that failed.

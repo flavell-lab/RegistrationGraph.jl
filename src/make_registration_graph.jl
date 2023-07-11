@@ -1,4 +1,6 @@
 """
+    to_dict(graph::SimpleWeightedGraph)
+
 Converts a `graph::SimpleWeightedGraph` into an adjacency dictionary
 node => Dict({neighbor1 => weight1, neighbor2=> weight2, ...})
 """
@@ -19,6 +21,8 @@ end
 
 
 """
+    optimize_subgraph(graph::SimpleWeightedGraph)
+
 Finds the minimum node of a graph, which has the smallest average shortest path length
 to each other node in that graph. Unconnected nodes are counted as having a path length equal to the
 highest edge weight.
@@ -54,6 +58,8 @@ function optimize_subgraph(graph::SimpleWeightedGraph)
 end
 
 """
+    make_voting_subgraph(graph::SimpleWeightedGraph, degree::Integer)
+
 Makes a subgraph of a `graph`, where each node is connected to their `degree` closest neighbors.
 Returns the subgraph, and an array of nodes that were disconnected from the rest of the nodes.
 """
@@ -80,6 +86,8 @@ function make_voting_subgraph(graph::SimpleWeightedGraph, degree::Integer)
 end
 
 """
+    find_unconnected(edges)
+
 Finds a set of nodes that aren't connected to the rest of the nodes through the `edges`.
 """
 function find_unconnected(edges)
@@ -115,6 +123,8 @@ end
 
 
 """
+    load_graph(elx_difficulty::String; func=nothing, difficulty_importance::Real=0.05)
+
 Loads an adjacency matrix from a file and stores it as a graph.
 You can specify a function to apply to each weight.
 This is often helpful in cases where the heuristic obeys the triangle inequality,
@@ -159,6 +169,8 @@ function load_graph(elx_difficulty::String; func=nothing, difficulty_importance:
 end
  
 """
+    output_graph(subgraph::SimpleWeightedDiGraph, outfile::String; max_fixed_t::Int=0)
+
 Outputs `subgraph::SimpleWeightedDiGraph` to an output file `outfile` containing a list of edges in `subgraph`.
 Can set `max_fixed_t::Int` parameter if a dataset-alignment registration is being done.
 """
@@ -182,6 +194,8 @@ function output_graph(subgraph::SimpleWeightedDiGraph, outfile::String; max_fixe
 end
 
 """
+    remove_frame(graph::SimpleWeightedGraph, frame::Integer)
+s
 Given a graph `graph::SimpleWeightedGraph` and a problematic `frame::Integer`, deletes the frame from the graph without changing frame indices.
 """
 function remove_frame(graph::SimpleWeightedGraph, frame::Integer)
@@ -196,6 +210,8 @@ end
 
 
 """
+    update_graph(reg_quality_arr::Array{String,1}, graph::SimpleWeightedGraph, metric::String; metric_tfm=identity)
+
 Recomputes the difficulty graph based on registration quality data.
 Returns a new graph where difficulties of registration problems are scaled by the quality metric.
 
@@ -234,6 +250,8 @@ function update_graph(reg_quality_arr::Array{String,1}, graph::SimpleWeightedGra
 end
 
 """
+    remove_previous_registrations(previous_problems, subgraph::SimpleWeightedDiGraph)
+
 Removes previous registrations from the subgraph.
 # Arguments:
 - `previous_problems`: list of registration problems

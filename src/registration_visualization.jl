@@ -1,4 +1,6 @@
 """
+    plot_centroid_match(fixed_img, matches, centroids_actual, centroids_inferred)
+
 Plots fixed, and inferred moving, centroids over the fixed worm image.
 Additionally, draws lines between matched centroids.
 
@@ -32,6 +34,8 @@ end
 
 
 """
+    view_roi_regmap(img_roi, img_roi_regmap; color_brightness::Real=0.3, plot_size=(600,600))
+
 Plots instance segmentation image and registration-mapped instance segmentation
 on the same plot, where each object is given a different color, the original image is shades of red,
 and the registration-mapped image is shades of green.
@@ -55,6 +59,8 @@ function view_roi_regmap(img_roi, img_roi_regmap; color_brightness::Real=0.3, pl
 end
 
 """
+    gen_regmap_rgb(img_roi, img_roi_regmap; color_brightness::Real=1)
+
 Generates a colormap that encodes the difference between the ROI image and the registration-mapped version using shades of red and green.
 
 # Arguments
@@ -79,6 +85,13 @@ function gen_regmap_rgb(img_roi, img_roi_regmap; color_brightness::Real=1)
 end
 
 """
+    visualize_roi_predictions(
+        img_roi, img_roi_regmap, img, img_regmap;
+        color_brightness::Real=0.3, plot_size=(600,600), roi_match=Dict(), unmatched_color=nothing, 
+        make_rgb=false, highlight_rois=[], highlight_regmap_rois=[], highlight_color=RGB.(0,0,1), 
+        contrast::Real=2, semantic::Bool=false, z_offset::Integer=0
+    )
+
 Visualizes a comparison between an ROI image and a registration-mapped version.
 
 # Arguments
@@ -166,6 +179,8 @@ end
 
 
 """
+    make_rgb_arr(red, green, blue)
+
 Makes a `PyPlot`-compatible RGB array out of `red`, `green`, and `blue` channels.
 """
 function make_rgb_arr(red, green, blue)
@@ -187,6 +202,13 @@ function make_rgb_arr(red, green, blue)
 end
 
 """
+    make_diff_pngs(param_path::Dict, param::Dict, get_basename::Function,
+        fixed::Integer, moving::Integer; proj_dim::Integer=3,
+        fixed_ch_key::String="ch_marker", regdir_key::String="path_dir_reg",
+        nrrd_key="path_dir_nrrd_filt", result::Union{Nothing,String}=nothing,
+        contrast_f::Real=1, contrast_m::Real=1, swap_colors::Bool=false
+    )
+
 Makes PNG files to visualize how well the registration worked, by overlaying fixed and moving images.
 The fixed image will be red and the moving image will be green, so yellow indicates good registration.
 
@@ -250,6 +272,14 @@ function make_diff_pngs(param_path::Dict, param::Dict, get_basename::Function,
 end
 
 """
+    make_diff_pngs_base(
+        param_path::Dict, param::Dict, get_basename::Function,
+        fixed::Integer, moving::Integer; proj_dim::Integer=3,
+        regdir_key::String="path_dir_reg", nrrd_key="path_dir_nrrd_filt",
+        moving_ch_key::String="ch_marker", fixed_ch_key::String="ch_marker",
+        contrast_f::Real=1, contrast_m::Real=1, swap_colors::Bool=false, png_name="noreg.png"
+    )
+
 Makes PNG files before registration, directly comparing two frames.
 The fixed image will be red and the moving image will be green, so yellow indicates good registration.
 
@@ -306,6 +336,8 @@ function make_diff_pngs_base(param_path::Dict, param::Dict, get_basename::Functi
 end
 
 """
+    nrrd_to_png(nrrd_path, png_path; proj_dim=3)
+
 Converts an nrrd file at `nrrd_path::String` into a PNG file, saved to path `png_path::String`, using maximum intensity projection.
 The optional argument `proj_dim` (default 3) can be changed to project in a different dimension.
 """

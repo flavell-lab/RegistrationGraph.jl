@@ -1,4 +1,32 @@
 """
+    write_sbatch_graph(
+        edges, param_path_fixed::Dict, param_path_moving::Dict, param::Dict;
+        clear_cmd_dir::Bool=true,
+        cpu_per_task_key::String="cpu_per_task", 
+        memory_key::String="memory", 
+        duration_key::String="duration",
+        duration_julia_key::String="duration_julia",
+        job_name_key::String="job_name",
+        fixed_channel_key::String="ch_marker",
+        moving_channel_key::String="ch_marker",
+        head_dir_key::String="path_head_pos",
+        om_data_key::String="path_om_data",
+        om_scripts_key::String="path_om_scripts",
+        nrrd_dir_key::String="path_dir_nrrd_filt",
+        nrrd_om_dir_key::String="path_om_nrrd_filt",
+        mask_dir_key::String="path_dir_mask",
+        mask_om_dir_key::String="path_om_mask",
+        reg_dir_key::String="path_dir_reg",
+        reg_om_dir_key::String="path_om_reg",
+        path_head_rotate_key::String="path_head_rotate",
+        parameter_files_key::String="parameter_files",
+        cmd_dir_key::String="path_dir_cmd",
+        cmd_om_key::String="path_om_cmd",
+        cmd_array_dir_key::String="path_dir_cmd_array",
+        cmd_array_om_key::String="path_om_cmd_array"
+    )
+
+
 Syncs data from local computer to a remote server and creates command files for elastix on that server.
 WARNING: This program can permanently delete data if run with incorrect arguments.
 # Arguments
@@ -301,6 +329,12 @@ end
 
 
 """
+    run_registration(
+        param_path, path_img_fixed, path_img_moving; reg_dir_key="path_dir_reg_neuropal",
+        elastix_key="path_elastix_local", parameter_files_key="parameter_files_local",
+        init_param_file_key=nothing
+    )
+
 Runs elastix registration locally, for NeuroPAL.
 
 # Arguments:
@@ -338,6 +372,8 @@ function run_registration(param_path, path_img_fixed, path_img_moving; reg_dir_k
 end
 
 """
+    average_registered_images(reg_dir, central_nrrd_path, registration_problems, res_name)
+
 Averages all registered images, assuming they are all being registered to the same time point.
 # Arguments:
 - `reg_dir`: Registration directory that contains all the moving images registered to the fixed image.
@@ -359,6 +395,8 @@ end
         
 
 """
+    run_elastix_openmind(param_path::Dict, param::Dict; extra_cmd_paths=[])
+
 Runs elastix on OpenMind. Requires `julia` to be installed under the relevant username and activated in the default ssh shell.
 Note that you cannot have multiple instances of this command running simultaneously with the same `temp_dir`.
 Returns the jobid of the Julia script-submission job.
@@ -406,6 +444,8 @@ function squeue_submit_sbatch_remote(param, path_sh; partition="normal")
 end
 
 """
+    get_squeue_status(param::Dict)
+
 Gets the number of running and pending `squeue` commands from the given user.
 
 # Arguments
@@ -423,6 +463,8 @@ end
 
 
 """
+    get_squeue_status(param::Dict, jobid::Int)
+
 Gets the number of running and pending `squeue` commands from the given user.
 
 # Arguments
@@ -440,6 +482,8 @@ function get_squeue_status(param::Dict, jobid::Int)
 end
 
 """
+    get_lock(param_path::Dict, param::Dict; lock_key::String="path_dir_lock")
+
 Get a lock in `param_path[lock_key]`. Wait a minimum of `param["lock_wait"]` between successive lock checks.
 """
 function get_lock(param_path::Dict, param::Dict; lock_key::String="path_dir_lock")
@@ -457,6 +501,8 @@ function get_lock(param_path::Dict, param::Dict; lock_key::String="path_dir_lock
 end
 
 """
+    release_lock(param_path::Dict, param::Dict; lock_key::String="path_dir_lock")
+
 Release a lock in `param_path[lock_key]`.
 """
 function release_lock(param_path::Dict, param::Dict; lock_key::String="path_dir_lock")
@@ -464,6 +510,8 @@ function release_lock(param_path::Dict, param::Dict; lock_key::String="path_dir_
 end
 
 """
+    wait_for_elastix(param::Dict)
+
 This function stalls until all the user's jobs on OpenMind are completed.
 
 # Arguments
@@ -479,6 +527,8 @@ function wait_for_elastix(param::Dict)
 end
 
 """
+    wait_for_elastix(param::Dict, jobid::Int)
+
 This function stalls until the specified job is completed.
 
 # Arguments
@@ -495,6 +545,8 @@ function wait_for_elastix(param::Dict, jobid::Int)
 end
 
 """
+    sync_registered_data(param_path::Dict, param::Dict; reg_dir_key::String="path_dir_reg", reg_om_dir_key::String="path_om_reg")
+
 Deletes unnecessary files, then syncs registration data from a remote compute server back to the local computer.
 
 # Arguments
@@ -522,6 +574,8 @@ function sync_registered_data(param_path::Dict, param::Dict; reg_dir_key::String
 end
 
 """
+    fix_param_paths(problems, param_path::Dict, param::Dict; reg_dir_key::String="path_dir_reg", n_resolution_key::String="reg_n_resolution")
+
 Updates parameter paths in transform parameter files, to allow `transformix` to be run on them.
 Returns a dictionary of errors per problem and resolution.
 
@@ -563,6 +617,12 @@ function fix_param_paths(problems, param_path::Dict, param::Dict; reg_dir_key::S
 end
 
 """
+    average_am_registrations(
+        t_range, param_path::Dict; reg_dir_key::String="path_dir_reg_activity_marker",
+        transform_key::String="name_transform_activity_marker", transform_avg_key::String="name_transform_activity_marker_avg",
+        key_param_key::String="key_transform_parameters", avg_fn::Function=median
+    )
+
 Averages together registrations. All regstration parameters (including image size) must be the same except for the `TransformParameters`.
 
 # Arguments

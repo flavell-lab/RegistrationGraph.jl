@@ -1,14 +1,9 @@
 # Data Visualization API
 
-## Commonly Used Functions
 ```@docs
 make_diff_pngs
 make_diff_pngs_base
-mhd_to_png
-```
-
-## Other Functions
-```@docs
+nrrd_to_png
 visualize_roi_predictions
 view_roi_regmap
 gen_regmap_rgb

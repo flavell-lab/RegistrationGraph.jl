@@ -1,4 +1,6 @@
 """
+    generate_elastix_difficulty(path_elastix_difficulty::String, t_range, heuristic::Function)
+
 Generates an elastix difficulty file based on the given heuristic.
 
 # Arguments
@@ -36,6 +38,8 @@ function generate_elastix_difficulty(path_elastix_difficulty::String, t_range, h
 end
 
 """
+    generate_elastix_difficulty(param_path::Dict, t_range, heuristic::Function)
+
 Generates an elastix difficulty file based on the given heuristic.
 
 # Arguments
