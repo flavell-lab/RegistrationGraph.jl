@@ -353,7 +353,7 @@ function run_registration(param_path, path_img_fixed, path_img_moving; reg_dir_k
     
     cmd_arr = [path_elastix]
     push!(cmd_arr, "-threads")
-    push!(cmd_arr, num_threads)
+    push!(cmd_arr, "$(num_threads)")
     push!(cmd_arr, "-f")
     push!(cmd_arr, path_img_fixed)
     push!(cmd_arr, "-m")
