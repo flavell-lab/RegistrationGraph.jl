@@ -251,6 +251,7 @@ function write_sbatch_graph(edges, param_path_fixed::Dict, param_path_moving::Di
         
         # elastix image and output parameters
         script_str *= elastix_path*
+            " -threads $(cpu_per_task)"*
             " -f "*joinpath(nrrd_dir_remote, get_basename(edge[2], fixed_channel)*".nrrd")*
             " -m "*joinpath(nrrd_dir_remote_moving, get_basename_moving(edge[1], moving_channel)*".nrrd")*
             " -out "*joinpath(reg_dir_remote, dir)
@@ -346,11 +347,13 @@ Runs elastix registration locally, for NeuroPAL.
 - `init_param_file_key` (optional, default `nothing`): Initial parameter file.
 """
 function run_registration(param_path, path_img_fixed, path_img_moving; reg_dir_key="path_dir_reg_neuropal",
-        elastix_key="path_elastix_local", parameter_files_key="parameter_files_local", init_param_file_key=nothing)
+        elastix_key="path_elastix_local", parameter_files_key="parameter_files_local", init_param_file_key=nothing, num_threads=32)
     reg_dir = param_path[reg_dir_key]
     path_elastix = param_path[elastix_key]
     
     cmd_arr = [path_elastix]
+    push!(cmd_arr, "-threads")
+    push!(cmd_arr, num_threads)
     push!(cmd_arr, "-f")
     push!(cmd_arr, path_img_fixed)
     push!(cmd_arr, "-m")
