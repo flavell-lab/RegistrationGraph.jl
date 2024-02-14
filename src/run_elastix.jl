@@ -414,7 +414,7 @@ Returns the jobid of the Julia script-submission job.
     - `partition`: Partition to run elastix using (eg `use-everything`)
 - `extra_cmd_paths` (optional, default `[]`): Extra paths to script files to run 
 """
-function run_elastix_openmind(param_path::Dict, param::Dict; extra_cmd_paths=[], partition="flavell")
+function run_elastix_openmind(param_path::Dict, param::Dict; extra_cmd_paths=[])
     temp_dir = param_path["path_om_tmp"]
     temp_file = joinpath(temp_dir, "elx_commands.txt")
     all_temp_files = joinpath(temp_dir, "*")
@@ -434,7 +434,7 @@ function run_elastix_openmind(param_path::Dict, param::Dict; extra_cmd_paths=[],
     for i=2:length(all_script_files)
         run(`ssh $(user)@$(server) "ls -d $(all_script_files[i]) >> $(temp_file)"`)
     end
-    return squeue_submit_sbatch_remote(param, run_elastix_julia_path, partition=partition)
+    return squeue_submit_sbatch_remote(param, run_elastix_julia_path, partition=get(param, "partition_sbatch_script", "flavell"))
 end
 
 
