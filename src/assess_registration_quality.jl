@@ -25,7 +25,7 @@ function make_quality_dict(problems, evaluation_functions::Dict, selection_metri
     func_names = keys(evaluation_functions)
     @showprogress for (moving, fixed) in problems
         best_resolution = resolutions[1]
-        best_result = Inf
+        best_result = 0.0
         dict[(moving, fixed)] = Dict()
         errors[(moving, fixed)] = Dict()
         for resolution in resolutions
@@ -40,7 +40,7 @@ function make_quality_dict(problems, evaluation_functions::Dict, selection_metri
                         result = func(moving, fixed, resolution, mask_dir)
                     end
                     dict[(moving,fixed)][resolution][metric] = result
-                    if metric == selection_metric && result < best_result
+                    if metric == selection_metric && result > best_result
                         best_result = result
                         best_resolution = resolution
                     end
